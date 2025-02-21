@@ -1,0 +1,66 @@
+info:
+  app:
+    name: wallet
+    version: 1.0.0-SNAPSHOT
+server:
+  port: 8080
+  servlet:
+    context-path: /wallet
+spring:
+  application:
+    name: wallet
+  datasource:
+    url: jdbc:postgresql://${DATABASE_HOST:localhost}:5432/wallet
+    username: wallet
+    password: wallet
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      concurrency: 1
+      ack-mode: manual
+      group-id: wallet-consumer-group-id-main
+      auto-offset-reset: latest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "br.com.wallet.project.domain"
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      transaction-id-prefix: wallet-tx-
+    listener:
+      concurrency: 1
+      ack-mode: manual
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+    logfile:
+      external-file: application.log
+
+logging:
+  file:
+    name: application.log
+  logback:
+    rollingpolicy:
+      max-file-size: 500MB
+
+wallet:
+  kafka:
+    topics:
+      transactions: wallet-transactions
