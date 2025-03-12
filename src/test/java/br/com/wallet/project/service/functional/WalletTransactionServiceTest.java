@@ -1,0 +1,163 @@
+package br.com.wallet.project.service.functional;
+
+import br.com.wallet.project.controller.request.WalletRequest;
+import br.com.wallet.project.domain.TransactionType;
+import br.com.wallet.project.domain.model.Wallet;
+import br.com.wallet.project.domain.request.TransactionRequest;
+import br.com.wallet.project.domain.service.WalletService;
+import br.com.wallet.project.domain.service.WalletTransactionService;
+import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaTransactionRepository;
+import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaWalletRepository;
+import br.com.wallet.project.mapper.WalletMapper;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+@SpringBootTest
+class WalletTransactionServiceTest implements TestContainerSetup {
+
+    @Autowired
+    WalletService walletService;
+    @Autowired
+    WalletTransactionService walletTransactionService;
+    @Autowired
+    JpaWalletRepository jpaWalletRepository;
+    @Autowired
+    JpaTransactionRepository jpaTransactionRepository;
+
+    @Test
+    @Transactional("transactionManager")
+    void testDepositFundsForUser() throws InterruptedException {
+        String userId = UUID.randomUUID().toString();
+        UUID transactionId = UUID.randomUUID();
+        BigDecimal funds = BigDecimal.valueOf(100.0);
+        jpaWalletRepository.save(WalletMapper.mapWalletRequestIntoWalletEntity(buildWalletRequest(userId)));
+        TransactionRequest transactionRequest =
+                buildTransactionRequest(
+                        userId,
+                        transactionId,
+                        funds,
+                        TransactionType.DEPOSIT,
+                        null,
+                        null);
+        walletTransactionService.processDeposit(transactionRequest, transactionId);
+        Thread.sleep(2000);
+        Wallet walletAfterOperation = jpaWalletRepository.findByUserId(userId);
+        assertEquals(BigDecimal.valueOf(100.0).setScale(2, RoundingMode.HALF_DOWN), walletAfterOperation.getBalance());
+        assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionId));
+    }
+
+    @Test
+    @Transactional("transactionManager")
+    void shouldWithdrawFundsAfterDeposit() throws InterruptedException {
+        String userId = UUID.randomUUID().toString();
+        UUID transactionDepositId = UUID.randomUUID();
+        UUID transactionWithdrawId = UUID.randomUUID();
+        BigDecimal funds = BigDecimal.valueOf(100.0);
+
+        walletService.createWallet(buildWalletRequest(userId));
+
+        TransactionRequest transactionDepositRequest =
+                buildTransactionRequest(
+                        userId,
+                        transactionDepositId,
+                        funds,
+                        TransactionType.DEPOSIT,
+                        null,
+                        null);
+        walletTransactionService.processDeposit(transactionDepositRequest, transactionDepositId);
+
+        TransactionRequest transactionWithdrawRequest =
+                buildTransactionRequest(
+                        userId,
+                        transactionWithdrawId,
+                        BigDecimal.TEN,
+                        TransactionType.WITHDRAW,
+                        null,
+                        null);
+        walletTransactionService.processWithdraw(transactionWithdrawRequest, transactionWithdrawId);
+
+        Thread.sleep(2000);
+        Wallet walletAfterOperation = jpaWalletRepository.findByUserId(userId);
+        assertEquals(BigDecimal.valueOf(90.0).setScale(2, RoundingMode.HALF_DOWN), walletAfterOperation.getBalance());
+        assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionDepositId));
+        assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionWithdrawId));
+    }
+
+    @Test
+    @Transactional("transactionManager")
+    void shouldTransferFromWalletToAnother() throws InterruptedException {
+        String fromUserId = UUID.randomUUID().toString();
+        String toUserId = UUID.randomUUID().toString();
+        UUID transactionDepositId = UUID.randomUUID();
+        UUID transferTransactionId = UUID.randomUUID();
+        BigDecimal funds = BigDecimal.valueOf(100.0);
+
+        walletService.createWallet(buildWalletRequest(fromUserId));
+        walletService.createWallet(buildWalletRequest(toUserId));
+
+        TransactionRequest transactionDepositRequest =
+                buildTransactionRequest(
+                        fromUserId,
+                        transactionDepositId,
+                        funds,
+                        TransactionType.DEPOSIT,
+                        null,
+                        null);
+        walletTransactionService.processDeposit(transactionDepositRequest, transactionDepositId);
+
+        TransactionRequest transferRequest =
+                buildTransactionRequest(
+                        null,
+                        transferTransactionId,
+                        BigDecimal.valueOf(10),
+                        TransactionType.TRANSFER,
+                        fromUserId,
+                        toUserId);
+        walletTransactionService.processTransfer(transferRequest, transferTransactionId);
+
+        Thread.sleep(2000);
+
+        Wallet walletAfterOperationFromUserId = jpaWalletRepository.findByUserId(fromUserId);
+        assertEquals(BigDecimal.valueOf(90.00).setScale(2, RoundingMode.HALF_DOWN), walletAfterOperationFromUserId.getBalance());
+
+        Wallet walletAfterOperationToUserId = jpaWalletRepository.findByUserId(toUserId);
+        assertEquals(BigDecimal.valueOf(10.00).setScale(2, RoundingMode.HALF_DOWN), walletAfterOperationToUserId.getBalance());
+
+        assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionDepositId));
+        assertEquals(2, jpaTransactionRepository.findByTransactionTrackId(transferTransactionId).size());
+    }
+
+    private static WalletRequest buildWalletRequest(String userId) {
+        return new WalletRequest(userId);
+    }
+
+    private static TransactionRequest buildTransactionRequest(
+            String userId,
+            UUID transactionId,
+            BigDecimal amount,
+            TransactionType transactionType,
+            String fromUserWalletId,
+            String toUserWalletId
+    ) {
+        return TransactionRequest
+                .builder()
+                .userId(userId)
+                .transactionId(transactionId)
+                .amount(amount)
+                .transactionType(transactionType)
+                .fromUserWalletId(fromUserWalletId)
+                .toUserWalletId(toUserWalletId)
+                .build();
+    }
+
+}
+

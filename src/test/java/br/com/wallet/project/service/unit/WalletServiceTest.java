@@ -4,13 +4,13 @@ import br.com.wallet.project.controller.request.HistoryTransactionRequest;
 import br.com.wallet.project.controller.request.WalletRequest;
 import br.com.wallet.project.controller.response.TransactionHistoryResponse;
 import br.com.wallet.project.controller.response.WalletResponse;
-import br.com.wallet.project.repositoy.TransactionRepository;
-import br.com.wallet.project.repositoy.WalletRepository;
-import br.com.wallet.project.repositoy.model.Transaction;
-import br.com.wallet.project.repositoy.model.Wallet;
-import br.com.wallet.project.service.TransactionProcessorService;
-import br.com.wallet.project.service.WalletService;
-import br.com.wallet.project.service.exception.WalletException;
+import br.com.wallet.project.infrastructure.persistence.TransactionPersistence;
+import br.com.wallet.project.infrastructure.persistence.WalletPersistence;
+import br.com.wallet.project.domain.model.Transaction;
+import br.com.wallet.project.domain.model.Wallet;
+import br.com.wallet.project.domain.service.TransactionProcessorService;
+import br.com.wallet.project.domain.service.WalletService;
+import br.com.wallet.project.exception.WalletException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -29,9 +29,9 @@ import static org.mockito.Mockito.*;
 
 class WalletServiceTest {
     @Mock
-    WalletRepository walletRepository;
+    WalletPersistence walletPersistence;
     @Mock
-    TransactionRepository transactionRepository;
+    TransactionPersistence transactionPersistence;
     @Mock
     TransactionProcessorService transactionProcessorService;
     @InjectMocks
@@ -44,9 +44,8 @@ class WalletServiceTest {
 
     @Test
     void testCreateWallet() {
-        when(walletRepository.findByUserId(anyString())).thenReturn(null);
-        when(walletRepository.save(any())).thenReturn(buildWalletEntity());
-        when(transactionRepository.save(any())).thenReturn(buildTransactionEntity());
+        when(walletPersistence.findByUserId(anyString())).thenReturn(null);
+        when(transactionPersistence.save(any())).thenReturn(buildTransactionEntity());
 
         WalletResponse result = walletService.createWallet(buildWalletRequest("userId"));
         assertNotNull(result);
@@ -55,7 +54,7 @@ class WalletServiceTest {
 
     @Test
     void testRetrieveBalance() {
-        when(walletRepository.findByUserId(anyString())).thenReturn(buildWalletEntity());
+        when(walletPersistence.findByUserId(anyString())).thenReturn(buildWalletEntity());
         WalletResponse result = walletService.retrieveBalance(buildWalletRequest("userId"));
         assertNotNull(result);
         assertEquals("userId", result.getUserId());
@@ -63,10 +62,10 @@ class WalletServiceTest {
     }
 
     @Test
-    void testBalanceHistory() {
-        when(walletRepository.findByUserId(anyString())).thenReturn(buildWalletEntity());
-        when(transactionRepository.findTransactionsByDateAndUserId(any(LocalDateTime.class), any(LocalDateTime.class), anyString())).thenReturn(List.of(buildTransactionEntity()));
-        List<TransactionHistoryResponse> result = walletService.balanceHistory(new HistoryTransactionRequest("userId", LocalDateTime.of(2025, Month.FEBRUARY, 21, 19, 28, 8)));
+    void testRetrieveBalanceHistory() {
+        when(walletPersistence.findByUserId(anyString())).thenReturn(buildWalletEntity());
+        when(transactionPersistence.findTransactionsByDateAndUserId(any(LocalDateTime.class), any(LocalDateTime.class), anyString())).thenReturn(List.of(buildTransactionEntity()));
+        List<TransactionHistoryResponse> result = walletService.retrieveBalanceHistory(new HistoryTransactionRequest("userId", LocalDateTime.of(2025, Month.FEBRUARY, 21, 19, 28, 8)));
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("userId", result.get(0).getUserId());
@@ -74,7 +73,7 @@ class WalletServiceTest {
 
     @Test
     void testValidateWallet() {
-        when(walletRepository.findByUserId(anyString())).thenReturn(buildWalletEntity());
+        when(walletPersistence.findByUserId(anyString())).thenReturn(buildWalletEntity());
         Wallet result = walletService.validateWallet("userId");
         assertEquals("userId", result.getUserId());
         assertEquals(BigDecimal.TEN, result.getBalance());
@@ -82,13 +81,13 @@ class WalletServiceTest {
 
     @Test
     void shouldThrowErrorWhenValidateWallet() {
-        when(walletRepository.findByUserId(anyString())).thenReturn(null);
+        when(walletPersistence.findByUserId(anyString())).thenReturn(null);
         assertThrows(WalletException.class, () -> walletService.validateWallet("userId"));
     }
 
     @Test
     void testValidateWallet2() {
-        when(walletRepository.findByUserId(anyString())).thenReturn(buildWalletEntity());
+        when(walletPersistence.findByUserId(anyString())).thenReturn(buildWalletEntity());
         Wallet result = walletService.validateWallet("userId", UUID.randomUUID());
         assertEquals("userId", result.getUserId());
         assertEquals(BigDecimal.TEN, result.getBalance());
@@ -96,7 +95,7 @@ class WalletServiceTest {
 
     @Test
     void shouldThrowErrorWhenValidateWallet2() {
-        when(walletRepository.findByUserId(anyString())).thenReturn(null);
+        when(walletPersistence.findByUserId(anyString())).thenReturn(null);
         assertThrows(WalletException.class, () -> walletService.validateWallet("userId", UUID.randomUUID()));
     }
 

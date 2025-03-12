@@ -3,22 +3,17 @@ package br.com.wallet.project.service.functional;
 import br.com.wallet.project.controller.request.WalletRequest;
 import br.com.wallet.project.domain.TransactionType;
 import br.com.wallet.project.domain.request.TransactionRequest;
-import br.com.wallet.project.repositoy.TransactionRepository;
-import br.com.wallet.project.repositoy.WalletRepository;
-import br.com.wallet.project.repositoy.model.Transaction;
-import br.com.wallet.project.repositoy.model.Wallet;
-import br.com.wallet.project.service.WalletService;
+import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaTransactionRepository;
+import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaWalletRepository;
+import br.com.wallet.project.domain.model.Wallet;
+import br.com.wallet.project.domain.service.WalletService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.DockerComposeContainer;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,18 +25,16 @@ class WalletServiceTest implements TestContainerSetup {
     @Autowired
     WalletService walletService;
     @Autowired
-    WalletRepository walletRepository;
+    JpaWalletRepository jpaWalletRepository;
     @Autowired
-    TransactionRepository transactionRepository;
-
-    private static final DockerComposeContainer<?> environment = new WalletServiceTest().getContainer();
+    JpaTransactionRepository jpaTransactionRepository;
 
     @Test
     @Transactional("transactionManager")
     void testCreateWallet() {
         String userId = UUID.randomUUID().toString();
         walletService.createWallet(buildWalletRequest(userId));
-        assertNotNull(walletRepository.findByUserId(userId));
+        assertNotNull(jpaWalletRepository.findByUserId(userId));
     }
 
     @Test
@@ -59,11 +52,11 @@ class WalletServiceTest implements TestContainerSetup {
                         TransactionType.DEPOSIT,
                         null,
                         null);
-        walletService.transactionOperation(transactionRequest);
+        walletService.transactionProcessor(transactionRequest);
         Thread.sleep(2000);
-        Wallet walletAfterOperation = walletRepository.findByUserId(userId);
+        Wallet walletAfterOperation = jpaWalletRepository.findByUserId(userId);
         assertEquals(BigDecimal.valueOf(100.0).setScale(2, RoundingMode.HALF_DOWN), walletAfterOperation.getBalance());
-        assertNotNull(transactionRepository.findByTransactionTrackId(transactionId));
+        assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionId));
     }
 
     @Test
@@ -84,7 +77,7 @@ class WalletServiceTest implements TestContainerSetup {
                         TransactionType.DEPOSIT,
                         null,
                         null);
-        walletService.transactionOperation(transactionDepositRequest);
+        walletService.transactionProcessor(transactionDepositRequest);
 
         TransactionRequest transactionWithdrawRequest =
                 buildTransactionRequest(
@@ -94,13 +87,13 @@ class WalletServiceTest implements TestContainerSetup {
                         TransactionType.WITHDRAW,
                         null,
                         null);
-        walletService.transactionOperation(transactionWithdrawRequest);
+        walletService.transactionProcessor(transactionWithdrawRequest);
 
         Thread.sleep(2000);
-        Wallet walletAfterOperation = walletRepository.findByUserId(userId);
+        Wallet walletAfterOperation = jpaWalletRepository.findByUserId(userId);
         assertEquals(BigDecimal.valueOf(90.0).setScale(2, RoundingMode.HALF_DOWN), walletAfterOperation.getBalance());
-        assertNotNull(transactionRepository.findByTransactionTrackId(transactionDepositId));
-        assertNotNull(transactionRepository.findByTransactionTrackId(transactionWithdrawId));
+        assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionDepositId));
+        assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionWithdrawId));
     }
 
     @Test
@@ -123,7 +116,7 @@ class WalletServiceTest implements TestContainerSetup {
                         TransactionType.DEPOSIT,
                         null,
                         null);
-        walletService.transactionOperation(transactionDepositRequest);
+        walletService.transactionProcessor(transactionDepositRequest);
 
         TransactionRequest transferRequest =
                 buildTransactionRequest(
@@ -133,18 +126,18 @@ class WalletServiceTest implements TestContainerSetup {
                         TransactionType.TRANSFER,
                         fromUserId,
                         toUserId);
-        walletService.transactionOperation(transferRequest);
+        walletService.transactionProcessor(transferRequest);
 
         Thread.sleep(2000);
 
-        Wallet walletAfterOperationFromUserId = walletRepository.findByUserId(fromUserId);
+        Wallet walletAfterOperationFromUserId = jpaWalletRepository.findByUserId(fromUserId);
         assertEquals(BigDecimal.valueOf(90.00).setScale(2, RoundingMode.HALF_DOWN), walletAfterOperationFromUserId.getBalance());
 
-        Wallet walletAfterOperationToUserId = walletRepository.findByUserId(toUserId);
+        Wallet walletAfterOperationToUserId = jpaWalletRepository.findByUserId(toUserId);
         assertEquals(BigDecimal.valueOf(10.00).setScale(2, RoundingMode.HALF_DOWN), walletAfterOperationToUserId.getBalance());
 
-        assertNotNull(transactionRepository.findByTransactionTrackId(transactionDepositId));
-        assertEquals(2, transactionRepository.findByTransactionTrackId(transferTransactionId).size());
+        assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionDepositId));
+        assertEquals(2, jpaTransactionRepository.findByTransactionTrackId(transferTransactionId).size());
     }
 
     private static WalletRequest buildWalletRequest(String userId) {
