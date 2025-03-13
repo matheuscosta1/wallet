@@ -13,6 +13,7 @@ import br.com.wallet.project.domain.model.Transaction;
 import br.com.wallet.project.domain.model.Wallet;
 import br.com.wallet.project.domain.enums.WalletErrors;
 import br.com.wallet.project.exception.WalletException;
+import br.com.wallet.project.util.MoneyUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,7 +53,7 @@ public class WalletService extends WalletValidationService {
         walletPersistence.save(newWallet);
         return WalletResponse
                 .builder()
-                .balance(newWallet.getBalance().setScale(2, RoundingMode.HALF_DOWN))
+                .balance(MoneyUtil.format(newWallet.getBalance()))
                 .userId(walletRequest.getUserId())
                 .build();
     }
@@ -62,7 +63,7 @@ public class WalletService extends WalletValidationService {
         Wallet wallet = validateWallet(walletRequest.getUserId());
         return WalletResponse
                 .builder()
-                .balance(wallet.getBalance().setScale(2, RoundingMode.HALF_DOWN))
+                .balance(MoneyUtil.format(wallet.getBalance()))
                 .userId(walletRequest.getUserId())
                 .build();
     }

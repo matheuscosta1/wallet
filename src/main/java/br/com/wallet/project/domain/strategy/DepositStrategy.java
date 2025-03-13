@@ -29,14 +29,10 @@ public class DepositStrategy extends WalletValidationService implements Transact
     public Transaction execute(TransactionRequest transactionRequest) {
         log.info("Deposit funds for user id: {} and transaction id {} started to process", transactionRequest.getUserId(), transactionRequest.getTransactionId());
         Wallet wallet = validateWallet(transactionRequest.getUserId(), transactionRequest.getTransactionId());
-
-        BigDecimal actualBalance = wallet.getBalance().setScale(2, RoundingMode.HALF_DOWN);
-        BigDecimal newBalance = actualBalance.add(transactionRequest.getAmount()).setScale(2, RoundingMode.HALF_DOWN);
-
-        wallet.setBalance(newBalance);
+        BigDecimal actualBalance = wallet.getBalance();
+        wallet.depositMoney(transactionRequest.getAmount(), transactionRequest.getTransactionId());
         walletPersistence.save(wallet);
-
-        Transaction transaction = transactionPersistence.save(TransactionMapper.mapTransactionRequestIntoTransactionEntity(transactionRequest, wallet, TransactionType.DEPOSIT, actualBalance, newBalance));
+        Transaction transaction = transactionPersistence.save(TransactionMapper.mapTransactionRequestIntoTransactionEntity(transactionRequest, wallet, TransactionType.DEPOSIT, actualBalance, wallet.getBalance()));
         log.info("Finished to deposit funds for user id: {} and transaction id {}", transactionRequest.getUserId(), transactionRequest.getTransactionId());
         return transaction;
     }

@@ -11,7 +11,8 @@ public enum WalletErrors {
   W0003("Transaction of type {0} can not be completed.", 1000),
   W0004("Insufficient funds to withdraw.", 1000),
   W0005("Unsupported transaction type: {0}.", 1000),
-  W0006("Wallet does not exist for user id {0}.", 1000);
+  W0006("Wallet does not exist for user id {0}.", 1000),
+  W0007("Deposit amount must be greater than zero. User id: {0}, transaction id {1}", 1000);
 
   private final String message;
   private final int group;

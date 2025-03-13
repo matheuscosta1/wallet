@@ -7,6 +7,7 @@ import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaTransa
 import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaWalletRepository;
 import br.com.wallet.project.domain.model.Wallet;
 import br.com.wallet.project.domain.service.WalletService;
+import br.com.wallet.project.util.MoneyUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -55,7 +56,7 @@ class WalletServiceTest implements TestContainerSetup {
         walletService.transactionProcessor(transactionRequest);
         Thread.sleep(2000);
         Wallet walletAfterOperation = jpaWalletRepository.findByUserId(userId);
-        assertEquals(BigDecimal.valueOf(100.0).setScale(2, RoundingMode.HALF_DOWN), walletAfterOperation.getBalance());
+        assertEquals(MoneyUtil.format(BigDecimal.valueOf(100.0)), walletAfterOperation.getBalance());
         assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionId));
     }
 
@@ -91,7 +92,7 @@ class WalletServiceTest implements TestContainerSetup {
 
         Thread.sleep(2000);
         Wallet walletAfterOperation = jpaWalletRepository.findByUserId(userId);
-        assertEquals(BigDecimal.valueOf(90.0).setScale(2, RoundingMode.HALF_DOWN), walletAfterOperation.getBalance());
+        assertEquals(MoneyUtil.format(BigDecimal.valueOf(90.0)), walletAfterOperation.getBalance());
         assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionDepositId));
         assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionWithdrawId));
     }
@@ -131,10 +132,10 @@ class WalletServiceTest implements TestContainerSetup {
         Thread.sleep(2000);
 
         Wallet walletAfterOperationFromUserId = jpaWalletRepository.findByUserId(fromUserId);
-        assertEquals(BigDecimal.valueOf(90.00).setScale(2, RoundingMode.HALF_DOWN), walletAfterOperationFromUserId.getBalance());
+        assertEquals(MoneyUtil.format(BigDecimal.valueOf(90.00)), walletAfterOperationFromUserId.getBalance());
 
         Wallet walletAfterOperationToUserId = jpaWalletRepository.findByUserId(toUserId);
-        assertEquals(BigDecimal.valueOf(10.00).setScale(2, RoundingMode.HALF_DOWN), walletAfterOperationToUserId.getBalance());
+        assertEquals(MoneyUtil.format(BigDecimal.valueOf(10.00)), walletAfterOperationToUserId.getBalance());
 
         assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionDepositId));
         assertEquals(2, jpaTransactionRepository.findByTransactionTrackId(transferTransactionId).size());

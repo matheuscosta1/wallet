@@ -5,6 +5,7 @@ import br.com.wallet.project.domain.TransactionType;
 import br.com.wallet.project.domain.model.Transaction;
 import br.com.wallet.project.domain.model.Wallet;
 import br.com.wallet.project.domain.request.TransactionRequest;
+import br.com.wallet.project.util.MoneyUtil;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -16,10 +17,10 @@ public class TransactionHistoryMapper {
                 .userId(transaction.getWallet().getUserId())
                 .transactionId(transaction.getTransactionTrackId())
                 .transactionType(transaction.getType())
-                .amount(transaction.getAmount().setScale(2,  RoundingMode.DOWN))
+                .amount(MoneyUtil.format(transaction.getAmount()))
                 .date(transaction.getTimestamp())
-                .balanceBeforeTransaction(transaction.getBalanceBeforeTransaction().setScale(2,  RoundingMode.DOWN))
-                .balanceAfterTransaction(transaction.getBalanceAfterTransaction().setScale(2,  RoundingMode.DOWN))
+                .balanceBeforeTransaction(MoneyUtil.format(transaction.getBalanceBeforeTransaction()))
+                .balanceAfterTransaction(MoneyUtil.format(transaction.getBalanceAfterTransaction()))
                 .build();
     }
 }
