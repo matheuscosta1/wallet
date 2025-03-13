@@ -5,7 +5,7 @@ import br.com.wallet.project.domain.TransactionType;
 import br.com.wallet.project.domain.model.Wallet;
 import br.com.wallet.project.domain.request.TransactionRequest;
 import br.com.wallet.project.domain.service.WalletService;
-import br.com.wallet.project.domain.service.WalletTransactionService;
+import br.com.wallet.project.domain.service.WalletTransactionProcessorServiceMessage;
 import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaTransactionRepository;
 import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaWalletRepository;
 import br.com.wallet.project.mapper.WalletMapper;
@@ -22,12 +22,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
-class WalletTransactionServiceTest implements TestContainerSetup {
+class WalletTransactionMessageProcessorServiceTest implements TestContainerSetup {
 
     @Autowired
     WalletService walletService;
     @Autowired
-    WalletTransactionService walletTransactionService;
+    WalletTransactionProcessorServiceMessage walletTransactionMessageProcessorService;
     @Autowired
     JpaWalletRepository jpaWalletRepository;
     @Autowired
@@ -48,7 +48,7 @@ class WalletTransactionServiceTest implements TestContainerSetup {
                         TransactionType.DEPOSIT,
                         null,
                         null);
-        walletTransactionService.processDeposit(transactionRequest, transactionId);
+        walletTransactionMessageProcessorService.processTransactionMessage(transactionRequest, transactionId);
         Thread.sleep(2000);
         Wallet walletAfterOperation = jpaWalletRepository.findByUserId(userId);
         assertEquals(BigDecimal.valueOf(100.0).setScale(2, RoundingMode.HALF_DOWN), walletAfterOperation.getBalance());
@@ -73,7 +73,7 @@ class WalletTransactionServiceTest implements TestContainerSetup {
                         TransactionType.DEPOSIT,
                         null,
                         null);
-        walletTransactionService.processDeposit(transactionDepositRequest, transactionDepositId);
+        walletTransactionMessageProcessorService.processTransactionMessage(transactionDepositRequest, transactionDepositId);
 
         TransactionRequest transactionWithdrawRequest =
                 buildTransactionRequest(
@@ -83,7 +83,7 @@ class WalletTransactionServiceTest implements TestContainerSetup {
                         TransactionType.WITHDRAW,
                         null,
                         null);
-        walletTransactionService.processWithdraw(transactionWithdrawRequest, transactionWithdrawId);
+        walletTransactionMessageProcessorService.processTransactionMessage(transactionWithdrawRequest, transactionWithdrawId);
 
         Thread.sleep(2000);
         Wallet walletAfterOperation = jpaWalletRepository.findByUserId(userId);
@@ -112,7 +112,7 @@ class WalletTransactionServiceTest implements TestContainerSetup {
                         TransactionType.DEPOSIT,
                         null,
                         null);
-        walletTransactionService.processDeposit(transactionDepositRequest, transactionDepositId);
+        walletTransactionMessageProcessorService.processTransactionMessage(transactionDepositRequest, transactionDepositId);
 
         TransactionRequest transferRequest =
                 buildTransactionRequest(
@@ -122,7 +122,7 @@ class WalletTransactionServiceTest implements TestContainerSetup {
                         TransactionType.TRANSFER,
                         fromUserId,
                         toUserId);
-        walletTransactionService.processTransfer(transferRequest, transferTransactionId);
+        walletTransactionMessageProcessorService.processTransactionMessage(transferRequest, transferTransactionId);
 
         Thread.sleep(2000);
 
