@@ -11,6 +11,7 @@ import br.com.wallet.project.domain.model.Wallet;
 import br.com.wallet.project.domain.service.TransactionProcessorService;
 import br.com.wallet.project.domain.service.WalletService;
 import br.com.wallet.project.exception.WalletException;
+import br.com.wallet.project.util.MoneyUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -58,7 +59,7 @@ class WalletServiceTest {
         WalletResponse result = walletService.retrieveBalance(buildWalletRequest("userId"));
         assertNotNull(result);
         assertEquals("userId", result.getUserId());
-        assertEquals(BigDecimal.TEN.setScale(2, RoundingMode.HALF_DOWN), result.getBalance());
+        assertEquals(MoneyUtil.format(BigDecimal.TEN), result.getBalance());
     }
 
     @Test
@@ -68,7 +69,7 @@ class WalletServiceTest {
         List<TransactionHistoryResponse> result = walletService.retrieveBalanceHistory(new HistoryTransactionRequest("userId", LocalDateTime.of(2025, Month.FEBRUARY, 21, 19, 28, 8)));
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals("userId", result.get(0).getUserId());
+        assertEquals("userId", result.getFirst().getUserId());
     }
 
     @Test
