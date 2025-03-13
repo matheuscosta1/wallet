@@ -1,5 +1,7 @@
 # Wallet Service - Backend
 
+Servico responsavel por habilitar transacoes financeiras
+
 ## Technologies
 
 - Java 21
@@ -84,11 +86,9 @@ If an error occurs during a transaction the message will be keeped in the topic 
 
 My Kafka is FIFO type, first in first out, so in a bank system I can guarantee that operations will be performed without one transaction affecting another one. And when I produce a message to Kafka topic I configured transactions to ensure that only one message will be posted.
 
-
 Still talking about Kafka, I'm handling failure messages using Kafka Retryable, configuring how many times I want to retry an operation and if it still keep failing, I can send a message to a dead letter queue (dlt).
 
 As Design of the application, and with the short time to develop, I chose to create services that are called from controller, in a simple way. But to keep the code more readable I used a Factory and Strategy Design Patterns to organize my code.
-
 
 I also treated exceptions during the process and log all of them.
 And during system operations I still logged relevant information as transaction id and user id, this way with an error in production for example I can troubleshoot easily.
