@@ -9,7 +9,7 @@ import br.com.wallet.project.controller.response.TransactionResponse;
 import br.com.wallet.project.controller.response.WalletResponse;
 import br.com.wallet.project.domain.TransactionType;
 import br.com.wallet.project.domain.service.WalletService;
-import br.com.wallet.project.domain.service.WalletTransactionService;
+import br.com.wallet.project.domain.service.WalletTransactionProcessorServiceMessage;
 import br.com.wallet.project.mapper.TransactionRequestMapper;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
@@ -25,11 +25,11 @@ import java.util.UUID;
 @Validated
 public class WalletController implements WalletControllerApi {
     private final WalletService walletService;
-    private final WalletTransactionService walletTransactionService;
+    private final WalletTransactionProcessorServiceMessage walletTransactionMessageProcessorService;
 
-    public WalletController(WalletService walletService, WalletTransactionService walletTransactionService) {
+    public WalletController(WalletService walletService, WalletTransactionProcessorServiceMessage walletTransactionMessageProcessorService) {
         this.walletService = walletService;
-        this.walletTransactionService = walletTransactionService;
+        this.walletTransactionMessageProcessorService = walletTransactionMessageProcessorService;
     }
 
     @Override
@@ -44,21 +44,21 @@ public class WalletController implements WalletControllerApi {
 
     @Override
     public ResponseEntity<TransactionResponse> depositFunds(@Valid @RequestBody TransactionOperationRequest transactionOperationRequest) {
-        return ResponseEntity.ok().body(walletTransactionService.processDeposit(
+        return ResponseEntity.ok().body(walletTransactionMessageProcessorService.processTransactionMessage(
                 TransactionRequestMapper.mapTransactionOperationRequestToTransactionRequest(
                     transactionOperationRequest, TransactionType.DEPOSIT), UUID.randomUUID()));
     }
 
     @Override
     public ResponseEntity<TransactionResponse> withdrawFunds(@Valid @RequestBody TransactionOperationRequest transactionOperationRequest) {
-        return ResponseEntity.ok().body(walletTransactionService.processWithdraw(
+        return ResponseEntity.ok().body(walletTransactionMessageProcessorService.processTransactionMessage(
                 TransactionRequestMapper.mapTransactionOperationRequestToTransactionRequest(
                     transactionOperationRequest, TransactionType.WITHDRAW), UUID.randomUUID()));
     }
 
     @Override
     public ResponseEntity<TransactionResponse> transferFunds(@Valid @RequestBody TransferRequest transferRequest) {
-        return ResponseEntity.ok().body(walletTransactionService.processTransfer(
+        return ResponseEntity.ok().body(walletTransactionMessageProcessorService.processTransactionMessage(
                 TransactionRequestMapper.mapTransferRequestIntoTransactionRequest(
                     transferRequest), UUID.randomUUID()));
     }
