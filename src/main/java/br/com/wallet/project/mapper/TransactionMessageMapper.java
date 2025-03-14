@@ -10,7 +10,7 @@ import java.math.RoundingMode;
 import java.util.UUID;
 
 public class TransactionMessageMapper {
-    public static TransactionMessage mapTransactionMessage(String userId, UUID transactionId, TransactionType transactionType, BigDecimal amount, String fromUserId, String toUserId) {
+    public static TransactionMessage mapTransactionMessage(String userId, UUID transactionId, TransactionType transactionType, BigDecimal amount, String fromUserId, String toUserId, String idempotencyId) {
         return TransactionMessage
                 .builder()
                 .type(transactionType)
@@ -19,6 +19,7 @@ public class TransactionMessageMapper {
                 .amount(amount)
                 .fromUserId(fromUserId)
                 .toUserId(toUserId)
+                .idempotencyId(idempotencyId)
                 .build();
     }
 }

@@ -34,7 +34,8 @@ public class WalletTransactionProcessorServiceMessage extends WalletValidationSe
                         transactionOperationRequest.getTransactionType(),
                         transactionOperationRequest.getAmount(),
                         transactionOperationRequest.getFromUserWalletId(),
-                        transactionOperationRequest.getToUserWalletId()
+                        transactionOperationRequest.getToUserWalletId(),
+                        transactionOperationRequest.getIdempotencyId()
                 );
         walletTransactionProducer.sendMessage(transactionMessage);
         log.info("{} message sent for transaction id {}", transactionOperationRequest.getTransactionType(), transactionId);
