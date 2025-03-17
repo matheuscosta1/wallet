@@ -27,4 +27,8 @@ public class TransferRequest {
   @Schema(example = "10.0", description = "Transfer amount.")
   @NotNull
   private BigDecimal amount;
+
+  @Schema(example = "12334002", description = "Unique transaction identifier to avoid duplicates.")
+  @NotBlank
+  private String idempotencyId;
 }

@@ -32,6 +32,11 @@ services:
       KAFKA_CREATE_TOPICS: "wallet-transactions:1:1"
     networks:
       - kafka-net
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+
 networks:
   kafka-net:
     driver: bridge

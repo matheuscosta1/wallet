@@ -21,6 +21,10 @@ spring:
       hibernate:
         format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
+  redis:
+    host: localhost
+    port: 6379
+    database: 1
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
@@ -61,6 +65,9 @@ logging:
       max-file-size: 500MB
 
 wallet:
+  redis:
+    unit: MINUTES
+    timeout: 5
   kafka:
     topics:
       transactions: wallet-transactions
