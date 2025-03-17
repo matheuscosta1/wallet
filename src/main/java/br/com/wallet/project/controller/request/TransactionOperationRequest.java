@@ -24,4 +24,8 @@ public class TransactionOperationRequest {
   @Schema(example = "10.0", description = "Wallet user identifier.")
   @NotNull
   private BigDecimal amount;
+
+  @Schema(example = "12334002", description = "Unique transaction identifier to avoid duplicates.")
+  @NotBlank
+  private String idempotencyId;
 }

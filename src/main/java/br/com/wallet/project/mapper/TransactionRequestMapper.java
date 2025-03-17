@@ -21,6 +21,7 @@ public class TransactionRequestMapper {
                 .toUserWalletId(transactionMessage.getToUserId())
                 .transactionId(transactionMessage.getTransactionId())
                 .transactionType(transactionMessage.getType())
+                .idempotencyId(transactionMessage.getIdempotencyId())
                 .build();
     }
 
@@ -40,6 +41,7 @@ public class TransactionRequestMapper {
                 .transactionType(TransactionType.TRANSFER)
                 .amount(transferRequest.getAmount())
                 .userId(null)
+                .idempotencyId(transferRequest.getIdempotencyId())
                 .build();
     }
 
@@ -48,6 +50,7 @@ public class TransactionRequestMapper {
                 .transactionType(transactionType)
                 .userId(transactionOperationRequest.getUserId())
                 .amount(transactionOperationRequest.getAmount())
+                .idempotencyId(transactionOperationRequest.getIdempotencyId())
                 .build();
     }
 }

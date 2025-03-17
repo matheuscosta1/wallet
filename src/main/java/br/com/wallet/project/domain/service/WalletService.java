@@ -5,6 +5,7 @@ import br.com.wallet.project.controller.request.WalletRequest;
 import br.com.wallet.project.controller.response.TransactionHistoryResponse;
 import br.com.wallet.project.controller.response.WalletResponse;
 import br.com.wallet.project.domain.request.TransactionRequest;
+import br.com.wallet.project.infrastructure.cache.redis.RedisOperation;
 import br.com.wallet.project.mapper.TransactionHistoryMapper;
 import br.com.wallet.project.mapper.WalletMapper;
 import br.com.wallet.project.infrastructure.persistence.TransactionPersistence;
@@ -13,6 +14,7 @@ import br.com.wallet.project.domain.model.Transaction;
 import br.com.wallet.project.domain.model.Wallet;
 import br.com.wallet.project.domain.enums.WalletErrors;
 import br.com.wallet.project.exception.WalletException;
+import br.com.wallet.project.util.MoneyUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,12 +32,14 @@ public class WalletService extends WalletValidationService {
     private final WalletPersistence walletPersistence;
     private final TransactionPersistence transactionPersistence;
     private final TransactionProcessorService transactionProcessorService;
+    private final RedisOperation redisOperation;
 
-    public WalletService(WalletPersistence walletPersistence, TransactionPersistence transactionPersistence, TransactionProcessorService transactionProcessorService) {
+    public WalletService(WalletPersistence walletPersistence, TransactionPersistence transactionPersistence, TransactionProcessorService transactionProcessorService, RedisOperation redisOperation) {
         super(walletPersistence);
         this.walletPersistence = walletPersistence;
         this.transactionPersistence = transactionPersistence;
         this.transactionProcessorService = transactionProcessorService;
+        this.redisOperation = redisOperation;
     }
 
     @Transactional("transactionManager")
@@ -52,7 +56,7 @@ public class WalletService extends WalletValidationService {
         walletPersistence.save(newWallet);
         return WalletResponse
                 .builder()
-                .balance(newWallet.getBalance().setScale(2, RoundingMode.HALF_DOWN))
+                .balance(MoneyUtil.format(newWallet.getBalance()))
                 .userId(walletRequest.getUserId())
                 .build();
     }
@@ -62,7 +66,7 @@ public class WalletService extends WalletValidationService {
         Wallet wallet = validateWallet(walletRequest.getUserId());
         return WalletResponse
                 .builder()
-                .balance(wallet.getBalance().setScale(2, RoundingMode.HALF_DOWN))
+                .balance(MoneyUtil.format(wallet.getBalance()))
                 .userId(walletRequest.getUserId())
                 .build();
     }
@@ -84,7 +88,22 @@ public class WalletService extends WalletValidationService {
     public void transactionProcessor(TransactionRequest transactionRequest) {
         log.info("Transaction operation service for user id: {} and transaction id {} started to process",
                 transactionRequest.getUserId(), transactionRequest.getTransactionId());
-        transactionProcessorService.processTransaction(transactionRequest, transactionRequest.getTransactionType());
+        boolean inProgress = redisOperation.saveIfNotExists(transactionRequest.getIdempotencyId(), "IN_PROGRESS");
+        if(!inProgress) {
+            log.warn("Duplicate transaction detected for transaction id: {}", transactionRequest.getTransactionId());
+            throw new WalletException(
+                    MessageFormat.format(
+                            WalletErrors.W0008.message(), transactionRequest.getTransactionId()),
+                    WalletErrors.W0008.name(),
+                    WalletErrors.W0008.group());
+        }
+
+        try {
+            transactionProcessorService.processTransaction(transactionRequest, transactionRequest.getTransactionType());
+            redisOperation.save(transactionRequest.getIdempotencyId(), "COMPLETED");
+        } catch (WalletException e) {
+            redisOperation.delete(transactionRequest.getIdempotencyId());
+        }
         log.info("Transaction processed successfully for user id: {} and transaction id {}", transactionRequest.getUserId(), transactionRequest.getTransactionId());
     }
 }

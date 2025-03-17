@@ -20,4 +20,5 @@ public class TransactionRequest {
   private TransactionType transactionType;
   private String fromUserWalletId;
   private String toUserWalletId;
+  private String idempotencyId;
 }
