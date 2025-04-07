@@ -38,15 +38,12 @@ services:
 
   redis:
     image: redis
-    command: ["redis-server", "--bind", "0.0.0.0", "--protected-mode", "no"]
-    container_name: redis_service
     ports:
       - "6379:6379"
     networks:
       - wallet_network
 
   wallet:
-    container_name: wallet-app
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -58,7 +55,7 @@ services:
       - JAVA_OPTS=-Xms512m -Xmx1024m
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka_service:9092
       - DATABASE_HOST=postgres_service
-      - SPRING_REDIS_HOST=redis_service
+      - SPRING_REDIS_HOST=redis
       - SPRING_REDIS_PORT=6379
       - SPRING_REDIS_DATABASE=1
       - MANAGEMENT_OTLP_TRACING_ENDPOINT=http://collector:4318/v1/traces

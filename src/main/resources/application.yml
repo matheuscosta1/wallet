@@ -21,10 +21,11 @@ spring:
       hibernate:
         format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
-  redis:
-    host: ${SPRING_REDIS_HOST:redis_service}
-    port: ${SPRING_REDIS_PORT:6379}
-    database: ${SPRING_REDIS_DATABASE:0}
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
+      database: ${SPRING_REDIS_DATABASE:0}
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost}:9092
     consumer:
@@ -59,7 +60,7 @@ management:
 
 logging:
   level:
-    root: INFO
+    root: DEBUG
     org.springframework: DEBUG
     org.springframework.data.redis: TRACE
   file:
