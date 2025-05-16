@@ -1,5 +1,6 @@
 package br.com.wallet.project.mapper;
 
+import br.com.wallet.project.controller.request.GenericRequest;
 import br.com.wallet.project.controller.request.TransactionOperationRequest;
 import br.com.wallet.project.controller.request.TransferRequest;
 import br.com.wallet.project.domain.TransactionMessage;
@@ -53,4 +54,16 @@ public class TransactionRequestMapper {
                 .idempotencyId(transactionOperationRequest.getIdempotencyId())
                 .build();
     }
+
+    public static TransactionRequest mapGenericRequestToTransactionRequest(GenericRequest genericRequest) {
+        return TransactionRequest.builder()
+                .toUserWalletId(genericRequest.getToUserId())
+                .fromUserWalletId(genericRequest.getFromUserId())
+                .transactionType(genericRequest.getTransactionType())
+                .amount(genericRequest.getAmount())
+                .userId(genericRequest.getUserId())
+                .idempotencyId(genericRequest.getIdempotencyId())
+                .build();
+    }
+
 }

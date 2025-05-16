@@ -11,7 +11,7 @@ import java.io.File;
 public interface TestContainerSetup {
     @Container
     DockerComposeContainer<?> container = new DockerComposeContainer<> (
-            new File("src/main/resources/compose/docker-compose.yml"))
+            new File("docker-compose.yml"))
             .withExposedService("kafka_1", 9092, Wait.forListeningPort())
             .withExposedService("postgres_1", 5432, Wait.forListeningPort())
             .withExposedService("zookeeper_1", 2181, Wait.forListeningPort());
