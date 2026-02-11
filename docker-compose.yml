@@ -1,0 +1,181 @@
+version: '3.7'
+
+services:
+  postgres_service:
+    image: postgres
+    volumes:
+      - ./src/main/resources/scripts/development/postgres/create-table-test-schema.sql:/docker-entrypoint-initdb.d/create-tables.sql
+    environment:
+      POSTGRES_USER: "wallet"
+      POSTGRES_PASSWORD: "wallet"
+      POSTGRES_DB: "wallet"
+    ports:
+      - "5432:5432"
+    networks:
+      - wallet_network
+
+  zookeeper_service:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+    networks:
+      - wallet_network
+
+  kafka_service:
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://kafka_service:9092,OUTSIDE://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:9092,OUTSIDE://0.0.0.0:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper_service:2181
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_CREATE_TOPICS: "wallet-transactions:1:1"
+    networks:
+      - wallet_network
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - wallet_network
+
+  wallet:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - ~/.m2:/root/.m2
+    ports:
+      - "8080:8080"
+    environment:
+      - JAVA_OPTS=-Xms512m -Xmx1024m
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka_service:9092
+      - DATABASE_HOST=postgres_service
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_REDIS_DATABASE=1
+      - MANAGEMENT_OTLP_TRACING_ENDPOINT=http://collector:4318/v1/traces
+      - MANAGEMENT_OTLP_METRICS_EXPORT_URL=http://collector:4318/v1/metrics
+      - MANAGEMENT_OTLP_LOGGING_ENDPOINT=http://collector:4318/v1/log
+    restart: always
+    depends_on:
+      - kafka_service
+      - zookeeper_service
+      - postgres_service
+      - redis
+    networks:
+      - wallet_network
+
+  collector:
+    container_name: collector
+    image: otel/opentelemetry-collector-contrib:0.114.0
+    #image: otel/opentelemetry-collector-contrib:latest
+    command:
+      - --config=/etc/otelcol-contrib/otel-collector.yml
+    volumes:
+      - ./compose/collector/otel-collector.yml:/etc/otelcol-contrib/otel-collector.yml
+    restart: always
+    ports:
+      - "1888:1888"   # pprof extension
+      - "8888:8888"   # Prometheus metrics exposed by the collector
+      - "8889:8889"   # Prometheus metrics endpoint
+      - "13133:13133" # health_check extension
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "55679:55679" # zpages extension
+    depends_on:
+      - loki
+      - jaeger-all-in-one
+      - zipkin-all-in-one
+      - tempo
+    networks:
+      - wallet_network
+
+  tempo:
+    container_name: tempo
+    image: grafana/tempo:latest
+    command: [ "-config.file=/etc/tempo.yml" ]
+    volumes:
+      - ./compose/tempo/tempo.yml:/etc/tempo.yml
+    restart: always
+    ports:
+      - "4317"  # otlp grpc
+      - "3200"  # tempo as grafana datasource
+    networks:
+      - wallet_network
+
+  loki:
+    container_name: loki
+    image: grafana/loki:latest
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: always
+    ports:
+      - "3100"
+    networks:
+      - wallet_network
+
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus
+    volumes:
+      - ./compose/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --enable-feature=exemplar-storage
+      - --web.enable-remote-write-receiver
+    restart: always
+    ports:
+      - '9090:9090'
+    depends_on:
+      - collector
+    networks:
+      - wallet_network
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+    volumes:
+      #- ./docker/grafana/grafana-storage:/var/lib/grafana
+      - ./compose/grafana/provisioning/datasources:/etc/grafana/provisioning/datasources
+      - ./compose/grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+      - jaeger-all-in-one
+      - zipkin-all-in-one
+      - tempo
+    networks:
+      - wallet_network
+
+  jaeger-all-in-one:
+    container_name: jaeger
+    image: jaegertracing/all-in-one:latest
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    restart: always
+    ports:
+      - "16686:16686"
+      - "4317"
+    networks:
+      - wallet_network
+
+  zipkin-all-in-one:
+    container_name: zipkin
+    image: openzipkin/zipkin:latest
+    restart: always
+    ports:
+      - "9411:9411"
+    networks:
+      - wallet_network
+
+networks:
+  wallet_network:
+    name: wallet_network
+    driver: bridge
