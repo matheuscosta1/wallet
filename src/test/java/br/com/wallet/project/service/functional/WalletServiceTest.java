@@ -42,6 +42,7 @@ class WalletServiceTest implements TestContainerSetup {
     void testDepositFundsForUser() throws InterruptedException {
         String userId = UUID.randomUUID().toString();
         UUID transactionId = UUID.randomUUID();
+        UUID idempotencyId = UUID.randomUUID();
         BigDecimal funds = BigDecimal.valueOf(100.0);
         walletService.createWallet(buildWalletRequest(userId));
         TransactionRequest transactionRequest =
@@ -51,7 +52,8 @@ class WalletServiceTest implements TestContainerSetup {
                         funds,
                         TransactionType.DEPOSIT,
                         null,
-                        null);
+                        null,
+                        idempotencyId);
         walletService.transactionProcessor(transactionRequest);
         Thread.sleep(2000);
         Wallet walletAfterOperation = jpaWalletRepository.findByUserId(userId);
@@ -65,6 +67,8 @@ class WalletServiceTest implements TestContainerSetup {
         String userId = UUID.randomUUID().toString();
         UUID transactionDepositId = UUID.randomUUID();
         UUID transactionWithdrawId = UUID.randomUUID();
+        UUID transactionDepositRequestIdempotencyId = UUID.randomUUID();
+        UUID transactionWithdrawRequestIdempotencyId = UUID.randomUUID();
         BigDecimal funds = BigDecimal.valueOf(100.0);
 
         walletService.createWallet(buildWalletRequest(userId));
@@ -76,7 +80,8 @@ class WalletServiceTest implements TestContainerSetup {
                         funds,
                         TransactionType.DEPOSIT,
                         null,
-                        null);
+                        null,
+                        transactionDepositRequestIdempotencyId);
         walletService.transactionProcessor(transactionDepositRequest);
 
         TransactionRequest transactionWithdrawRequest =
@@ -86,7 +91,8 @@ class WalletServiceTest implements TestContainerSetup {
                         BigDecimal.TEN,
                         TransactionType.WITHDRAW,
                         null,
-                        null);
+                        null,
+                        transactionWithdrawRequestIdempotencyId);
         walletService.transactionProcessor(transactionWithdrawRequest);
 
         Thread.sleep(2000);
@@ -103,6 +109,8 @@ class WalletServiceTest implements TestContainerSetup {
         String toUserId = UUID.randomUUID().toString();
         UUID transactionDepositId = UUID.randomUUID();
         UUID transferTransactionId = UUID.randomUUID();
+        UUID transactionDepositRequestIdempotencyId = UUID.randomUUID();
+        UUID transferRequestIdempotencyId = UUID.randomUUID();
         BigDecimal funds = BigDecimal.valueOf(100.0);
 
         walletService.createWallet(buildWalletRequest(fromUserId));
@@ -115,7 +123,8 @@ class WalletServiceTest implements TestContainerSetup {
                         funds,
                         TransactionType.DEPOSIT,
                         null,
-                        null);
+                        null,
+                        transactionDepositRequestIdempotencyId);
         walletService.transactionProcessor(transactionDepositRequest);
 
         TransactionRequest transferRequest =
@@ -125,7 +134,8 @@ class WalletServiceTest implements TestContainerSetup {
                         BigDecimal.valueOf(10),
                         TransactionType.TRANSFER,
                         fromUserId,
-                        toUserId);
+                        toUserId,
+                        transferRequestIdempotencyId);
         walletService.transactionProcessor(transferRequest);
 
         Thread.sleep(2000);
@@ -150,7 +160,8 @@ class WalletServiceTest implements TestContainerSetup {
             BigDecimal amount,
             TransactionType transactionType,
             String fromUserWalletId,
-            String toUserWalletId
+            String toUserWalletId,
+            UUID idempotencyId
     ) {
         return TransactionRequest
                 .builder()
@@ -160,6 +171,7 @@ class WalletServiceTest implements TestContainerSetup {
                 .transactionType(transactionType)
                 .fromUserWalletId(fromUserWalletId)
                 .toUserWalletId(toUserWalletId)
+                .idempotencyId(idempotencyId)
                 .build();
     }
 
