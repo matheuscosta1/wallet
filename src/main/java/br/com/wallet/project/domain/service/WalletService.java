@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.RoundingMode;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -88,7 +87,7 @@ public class WalletService extends WalletValidationService {
     public void transactionProcessor(TransactionRequest transactionRequest) {
         log.info("Transaction operation service for user id: {} and transaction id {} started to process",
                 transactionRequest.getUserId(), transactionRequest.getTransactionId());
-        boolean inProgress = redisOperation.saveIfNotExists(transactionRequest.getIdempotencyId(), "IN_PROGRESS");
+        boolean inProgress = redisOperation.saveIfNotExists(transactionRequest.getIdempotencyId().toString(), "IN_PROGRESS");
         if(!inProgress) {
             log.warn("Duplicate transaction detected for transaction id: {}", transactionRequest.getTransactionId());
             throw new WalletException(
@@ -100,9 +99,9 @@ public class WalletService extends WalletValidationService {
 
         try {
             transactionProcessorService.processTransaction(transactionRequest, transactionRequest.getTransactionType());
-            redisOperation.save(transactionRequest.getIdempotencyId(), "COMPLETED");
+            redisOperation.save(transactionRequest.getIdempotencyId().toString(), "COMPLETED");
         } catch (WalletException e) {
-            redisOperation.delete(transactionRequest.getIdempotencyId());
+            redisOperation.delete(transactionRequest.getIdempotencyId().toString());
         }
         log.info("Transaction processed successfully for user id: {} and transaction id {}", transactionRequest.getUserId(), transactionRequest.getTransactionId());
     }

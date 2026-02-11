@@ -1,8 +1,6 @@
 package br.com.wallet.project.mapper;
 
-import br.com.wallet.project.domain.TransactionType;
 import br.com.wallet.project.domain.model.Transfer;
-import br.com.wallet.project.domain.request.TransactionRequest;
 import br.com.wallet.project.domain.model.Transaction;
 import br.com.wallet.project.domain.model.Wallet;
 

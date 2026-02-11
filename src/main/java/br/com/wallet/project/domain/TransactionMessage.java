@@ -12,7 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class TransactionMessage {
     private UUID transactionId;
-    private String idempotencyId;
+    private UUID idempotencyId;
     private String userId;
     private String fromUserId;
     private String toUserId;

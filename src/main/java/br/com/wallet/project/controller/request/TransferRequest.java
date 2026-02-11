@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 
 @Getter
@@ -29,6 +30,6 @@ public class TransferRequest {
   private BigDecimal amount;
 
   @Schema(example = "12334002", description = "Unique transaction identifier to avoid duplicates.")
-  @NotBlank
-  private String idempotencyId;
+  @NotNull
+  private UUID idempotencyId;
 }

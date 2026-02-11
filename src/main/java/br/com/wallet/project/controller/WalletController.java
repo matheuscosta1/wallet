@@ -12,10 +12,10 @@ import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @Slf4j
@@ -43,28 +43,28 @@ public class WalletController implements WalletControllerApi {
     public ResponseEntity<TransactionResponse> depositFunds(@Valid @RequestBody TransactionOperationRequest transactionOperationRequest) {
         return ResponseEntity.ok().body(walletTransactionMessageProcessorService.processTransactionMessage(
                 TransactionRequestMapper.mapTransactionOperationRequestToTransactionRequest(
-                    transactionOperationRequest, TransactionType.DEPOSIT), UUID.randomUUID()));
+                    transactionOperationRequest, TransactionType.DEPOSIT), transactionOperationRequest.getIdempotencyId()));
     }
 
     @Override
     public ResponseEntity<TransactionResponse> withdrawFunds(@Valid @RequestBody TransactionOperationRequest transactionOperationRequest) {
         return ResponseEntity.ok().body(walletTransactionMessageProcessorService.processTransactionMessage(
                 TransactionRequestMapper.mapTransactionOperationRequestToTransactionRequest(
-                    transactionOperationRequest, TransactionType.WITHDRAW), UUID.randomUUID()));
+                    transactionOperationRequest, TransactionType.WITHDRAW), transactionOperationRequest.getIdempotencyId()));
     }
 
     @Override
     public ResponseEntity<TransactionResponse> transferFunds(@Valid @RequestBody TransferRequest transferRequest) {
         return ResponseEntity.ok().body(walletTransactionMessageProcessorService.processTransactionMessage(
                 TransactionRequestMapper.mapTransferRequestIntoTransactionRequest(
-                    transferRequest), UUID.randomUUID()));
+                    transferRequest), transferRequest.getIdempotencyId()));
     }
 
     @Override
     public ResponseEntity<TransactionResponse> anyOperation(@Valid @RequestBody GenericRequest genericRequest) {
         return ResponseEntity.ok().body(walletTransactionMessageProcessorService.processTransactionMessage(
                 TransactionRequestMapper.mapGenericRequestToTransactionRequest(
-                        genericRequest), UUID.randomUUID()));
+                        genericRequest), genericRequest.getIdempotencyId()));
     }
 
     @Override
