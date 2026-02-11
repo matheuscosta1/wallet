@@ -1,9 +1,6 @@
 package br.com.wallet.project.controller;
 
-import br.com.wallet.project.controller.request.HistoryTransactionRequest;
-import br.com.wallet.project.controller.request.TransactionOperationRequest;
-import br.com.wallet.project.controller.request.TransferRequest;
-import br.com.wallet.project.controller.request.WalletRequest;
+import br.com.wallet.project.controller.request.*;
 import br.com.wallet.project.controller.response.TransactionHistoryResponse;
 import br.com.wallet.project.controller.response.TransactionResponse;
 import br.com.wallet.project.controller.response.WalletResponse;
@@ -61,6 +58,13 @@ public class WalletController implements WalletControllerApi {
         return ResponseEntity.ok().body(walletTransactionMessageProcessorService.processTransactionMessage(
                 TransactionRequestMapper.mapTransferRequestIntoTransactionRequest(
                     transferRequest), UUID.randomUUID()));
+    }
+
+    @Override
+    public ResponseEntity<TransactionResponse> anyOperation(@Valid @RequestBody GenericRequest genericRequest) {
+        return ResponseEntity.ok().body(walletTransactionMessageProcessorService.processTransactionMessage(
+                TransactionRequestMapper.mapGenericRequestToTransactionRequest(
+                        genericRequest), UUID.randomUUID()));
     }
 
     @Override

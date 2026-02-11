@@ -1,12 +1,9 @@
 package br.com.wallet.project.controller;
 
-import br.com.wallet.project.controller.request.HistoryTransactionRequest;
-import br.com.wallet.project.controller.request.TransactionOperationRequest;
-import br.com.wallet.project.controller.request.TransferRequest;
+import br.com.wallet.project.controller.request.*;
 import br.com.wallet.project.controller.response.TransactionHistoryResponse;
 import br.com.wallet.project.controller.response.TransactionResponse;
 import br.com.wallet.project.controller.response.WalletResponse;
-import br.com.wallet.project.controller.request.WalletRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -39,6 +36,10 @@ public interface WalletControllerApi {
     @Operation(summary = "Wallet transfer funds", description = "Transfer funds from an user to another")
     @PostMapping("transfer")
     ResponseEntity<TransactionResponse> transferFunds(@Valid @RequestBody TransferRequest transactionOperationRequest);
+
+    @Operation(summary = "Wallet any operation funds", description = "Any operation")
+    @PostMapping("any-operation")
+    ResponseEntity<TransactionResponse> anyOperation(@Valid @RequestBody GenericRequest transactionOperationRequest);
 
     @Operation(summary = "Wallet transaction history", description = "Transaction history by specified date")
     @GetMapping("history")

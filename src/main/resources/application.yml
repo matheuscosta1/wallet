@@ -21,12 +21,13 @@ spring:
       hibernate:
         format_sql: false
         dialect: org.hibernate.dialect.PostgreSQLDialect
-  redis:
-    host: localhost
-    port: 6379
-    database: 1
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:localhost}
+      port: ${SPRING_REDIS_PORT:6379}
+      database: ${SPRING_REDIS_DATABASE:0}
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost}:9092
     consumer:
       concurrency: 1
       ack-mode: manual
@@ -58,6 +59,10 @@ management:
       external-file: application.log
 
 logging:
+  level:
+    root: INFO
+    org.springframework: INFO
+    org.springframework.data.redis: INFO
   file:
     name: application.log
   logback:
