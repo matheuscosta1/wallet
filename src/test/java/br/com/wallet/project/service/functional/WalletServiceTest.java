@@ -8,9 +8,10 @@ import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaWallet
 import br.com.wallet.project.domain.model.Wallet;
 import br.com.wallet.project.domain.service.WalletService;
 import br.com.wallet.project.util.MoneyUtil;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestConstructor;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -20,14 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
+@TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
+@RequiredArgsConstructor
 class WalletServiceTest implements TestContainerSetup {
 
-    @Autowired
-    WalletService walletService;
-    @Autowired
-    JpaWalletRepository jpaWalletRepository;
-    @Autowired
-    JpaTransactionRepository jpaTransactionRepository;
+    private final WalletService walletService;
+    private final JpaWalletRepository jpaWalletRepository;
+    private final JpaTransactionRepository jpaTransactionRepository;
 
     @Test
     @Transactional("transactionManager")
