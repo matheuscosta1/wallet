@@ -3,6 +3,7 @@ package br.com.wallet.project.mapper;
 import br.com.wallet.project.controller.response.TransactionResponse;
 import br.com.wallet.project.domain.TransactionMessage;
 import br.com.wallet.project.domain.TransactionType;
+import br.com.wallet.project.domain.request.Transactions;
 import br.com.wallet.project.util.MoneyUtil;
 
 import java.math.BigDecimal;
@@ -17,6 +18,7 @@ public class TransactionResponseMapper {
                 .userId(transactionMessage.getUserId())
                 .amount(MoneyUtil.format(transactionMessage.getAmount()))
                 .transactionType(transactionType)
+                .transactions(Transactions.builder().transactionType(transactionType).transactionId(transactionMessage.getTransactionId()).build())
                 .build();
     }
 }

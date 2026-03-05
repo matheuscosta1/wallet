@@ -1,14 +1,14 @@
 info:
   app:
-    name: @project.artifactId@
-    version: @project.version@
+    name: "wallet"
+    version: "1.0.0-SNAPSHOT"
 server:
   port: 8080
   servlet:
-    context-path: /@project.artifactId@
+    context-path: "/wallet"
 spring:
   application:
-    name: @project.artifactId@
+    name: "wallet"
   datasource:
     url: jdbc:postgresql://${DATABASE_HOST:localhost}:5432/wallet
     username: wallet

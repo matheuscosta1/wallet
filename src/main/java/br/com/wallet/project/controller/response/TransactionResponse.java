@@ -1,6 +1,7 @@
 package br.com.wallet.project.controller.response;
 
 import br.com.wallet.project.domain.TransactionType;
+import br.com.wallet.project.domain.request.Transactions;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
@@ -23,6 +24,7 @@ public class TransactionResponse {
 
   @Schema(example = "DEPOSIT", description = "Transaction operation type.")
   private TransactionType transactionType;
+  private Transactions transactions;
 
   @Schema(example = "10.0", description = "Amount from operation.")
   private BigDecimal amount;

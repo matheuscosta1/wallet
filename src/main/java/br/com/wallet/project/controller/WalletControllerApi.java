@@ -25,6 +25,12 @@ public interface WalletControllerApi {
     @GetMapping("balance")
     ResponseEntity<WalletResponse> retrieveBalance(@Valid @RequestBody WalletRequest walletRequest);
 
+    @Operation(summary = "Wallet balance funds", description = "Retrieve wallet retrieve-discounted-balance")
+    @PostMapping ("retrieve-discounted-balance")
+    ResponseEntity<WalletResponse> WalletCDI(@Valid @RequestBody WalletRequest walletRequest);
+
+
+
     @Operation(summary = "Wallet deposit funds", description = "Deposit funds into wallet")
     @PostMapping("deposit")
     ResponseEntity<TransactionResponse> depositFunds(@Valid @RequestBody TransactionOperationRequest transactionOperationRequest);

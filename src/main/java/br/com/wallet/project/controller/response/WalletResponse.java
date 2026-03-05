@@ -17,4 +17,12 @@ public class WalletResponse {
 
   @Schema(example = "0.00", description = "Balance wallet.")
   private BigDecimal balance;
+
+
+  public BigDecimal getBalance(){
+      return balance;
+  }
+  public void setBalance(BigDecimal balance){
+      this.balance=balance;
+  }
 }

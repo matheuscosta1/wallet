@@ -1,10 +1,12 @@
 package br.com.wallet.project.controller;
 
 import br.com.wallet.project.controller.request.*;
+import br.com.wallet.project.controller.response.CdiResponse;
 import br.com.wallet.project.controller.response.TransactionHistoryResponse;
 import br.com.wallet.project.controller.response.TransactionResponse;
 import br.com.wallet.project.controller.response.WalletResponse;
 import br.com.wallet.project.domain.TransactionType;
+import br.com.wallet.project.domain.service.CdiService;
 import br.com.wallet.project.domain.service.WalletService;
 import br.com.wallet.project.domain.service.WalletTransactionProcessorServiceMessage;
 import br.com.wallet.project.mapper.TransactionRequestMapper;
@@ -14,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
+import java.math.BigDecimal;
 
 import java.util.List;
 
@@ -22,10 +25,12 @@ import java.util.List;
 @Validated
 public class WalletController implements WalletControllerApi {
     private final WalletService walletService;
+    private final CdiService cdiService;
     private final WalletTransactionProcessorServiceMessage walletTransactionMessageProcessorService;
 
-    public WalletController(WalletService walletService, WalletTransactionProcessorServiceMessage walletTransactionMessageProcessorService) {
+    public WalletController(WalletService walletService, CdiService cdiService, WalletTransactionProcessorServiceMessage walletTransactionMessageProcessorService) {
         this.walletService = walletService;
+        this.cdiService = cdiService;
         this.walletTransactionMessageProcessorService = walletTransactionMessageProcessorService;
     }
 
@@ -38,6 +43,18 @@ public class WalletController implements WalletControllerApi {
     public ResponseEntity<WalletResponse> retrieveBalance(WalletRequest walletRequest) {
         return ResponseEntity.ok().body(walletService.retrieveBalance(walletRequest));
     }
+    @Override
+    public ResponseEntity<WalletResponse> WalletCDI(WalletRequest walletRequest) {
+        // Aqui você chama o seu service que criamos antes
+        CdiResponse cdiResponse = cdiService.calculateCdi(walletRequest);
+
+        // Converte para o formato de resposta esperado pela interface (WalletResponse)
+        WalletResponse response = new WalletResponse();
+        response.setBalance(cdiResponse.getCalculatedValue());
+
+        return ResponseEntity.ok(response);
+    }
+
 
     @Override
     public ResponseEntity<TransactionResponse> depositFunds(@Valid @RequestBody TransactionOperationRequest transactionOperationRequest) {
