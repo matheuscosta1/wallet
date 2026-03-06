@@ -1,74 +1,403 @@
-# Wallet Service - Backend
+# Wallet Service
 
-Service responsible for managing digital wallets and processing financial transactions asynchronously with high reliability and consistency.
+> A backend microservice responsible for managing digital wallets and processing financial transactions asynchronously with high reliability and consistency.
+
+[![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/projects/jdk/21/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-green)](https://spring.io/projects/spring-boot)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
+[![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-3.x-black)](https://kafka.apache.org/)
+[![Redis](https://img.shields.io/badge/Redis-7.x-red)](https://redis.io/)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Technologies](#technologies)
+- [Getting Started](#getting-started)
+- [API Endpoints](#api-endpoints)
+- [Architecture](#architecture)
+- [Data Models](#data-models)
+- [Transaction Flow](#transaction-flow)
+- [Design Patterns](#design-patterns)
+- [Concurrency & Consistency](#concurrency--consistency)
+- [Kafka Resilience](#kafka-resilience)
+- [Tests](#tests)
+- [Future Improvements](#future-improvements)
+
+---
+
+## Overview
+
+**Wallet Service** is a Java/Spring Boot backend that provides six operations on digital wallets:
+
+| Operation | Method | Endpoint |
+|---|---|---|
+| Create wallet | `POST` | `/wallet/creation` |
+| Get balance | `GET` | `/wallet/balance` |
+| Deposit funds | `POST` | `/wallet/deposit` |
+| Withdraw funds | `POST` | `/wallet/withdraw` |
+| Transfer between wallets | `POST` | `/wallet/transfer` |
+| Transaction history | `GET` | `/wallet/history` |
+| Generic operation | `POST` | `/wallet/any-operation` |
+
+Financial transactions (deposit, withdrawal and transfer) are **processed asynchronously via Apache Kafka**, ensuring the API responds immediately to the client while the actual processing happens in the background with consistency and idempotency guarantees.
+
+---
 
 ## Technologies
 
-- Java 21
-- Maven 21
-- Docker
-- Docker Compose
-- PostgreSQL
-- Spring Boot
-- Swagger
+- **Java 21** + **Spring Boot** — main runtime and framework
+- **PostgreSQL** — primary persistence for wallets and transactions
+- **Apache Kafka** — asynchronous transaction processing (FIFO, retry, DLQ)
+- **Redis** — idempotency control to prevent duplicate transaction processing
+- **Docker / Docker Compose** — local infrastructure orchestration
+- **Testcontainers** — functional tests with real infrastructure
+- **Swagger / OpenAPI** — interactive API documentation
+- **Maven** — build and dependency management
 
-## Requirements
+---
 
-### Docker and Docker Compose
+## Getting Started
 
-To run this system you will need to have docker and docker-compose
+### Prerequisites
 
-## Starting services
+- Docker and Docker Compose installed
+- Java 21+
+- Maven 3.8+
 
-### 1. Build project
+### 1. Build the project
+
+```bash
+mvn clean install
+```
+
+### 2. Start infrastructure (PostgreSQL + Kafka + Redis)
+
+```bash
+cd src/main/resources/compose
+docker-compose up -d
+```
+
+### 3. Run the application
+
+```bash
+mvn spring-boot:run
+```
+
+The application starts at `http://localhost:8080/wallet`.
+
+### 4. Interactive API documentation (Swagger)
+
+Visit: [http://localhost:8080/wallet/swagger-ui/index.html](http://localhost:8080/wallet/swagger-ui/index.html)
+
+A Postman collection is also available at `collections/Wallet.postman_collection.json`.
+
+---
+
+## API Endpoints
+
+### `POST /wallet/creation`
+
+Creates a new wallet for a user.
+
+```json
+{
+  "userId": "user-account-id"
+}
+```
+
+### `GET /wallet/balance`
+
+Returns the current balance of a wallet.
+
+```json
+{
+  "userId": "user-account-id"
+}
+```
+
+### `POST /wallet/deposit`
+
+Deposits funds into a wallet. Processed asynchronously via Kafka.
+
+```json
+{
+  "userId": "user-account-id",
+  "amount": 100.00,
+  "idempotencyId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+**Response:** returns a `transactionId` immediately (HTTP 200). The balance is updated asynchronously.
+
+### `POST /wallet/withdraw`
+
+Withdraws funds from a wallet. Processed asynchronously via Kafka.
+
+```json
+{
+  "userId": "user-account-id",
+  "amount": 50.00,
+  "idempotencyId": "550e8400-e29b-41d4-a716-446655440001"
+}
+```
+
+### `POST /wallet/transfer`
+
+Transfers funds between two wallets. Processed asynchronously via Kafka.
+
+```json
+{
+  "fromUserId": "user-account-id-0",
+  "toUserId": "user-account-id-1",
+  "amount": 25.00,
+  "idempotencyId": "550e8400-e29b-41d4-a716-446655440002"
+}
+```
+
+### `GET /wallet/history`
+
+Returns the transaction history of a user filtered by a specific date.
+
+```json
+{
+  "userId": "user-account-id",
+  "date": "2025-02-21 00:00:00.000"
+}
+```
+
+Each transaction record includes `balanceBeforeTransaction` and `balanceAfterTransaction` for full traceability.
+
+### `POST /wallet/any-operation`
+
+Generic endpoint that accepts any transaction type (`DEPOSIT`, `WITHDRAW`, `TRANSFER`) in a single payload.
+
+---
+
+## Architecture
+
+The project uses **Hexagonal Architecture (Ports & Adapters)** combined with **Event-Driven Architecture via Apache Kafka**.
+
+### Core Principle
+
+The **domain depends on nothing external**. It defines interfaces (Ports) that describe what it needs. The infrastructure (JPA, Kafka, Redis) implements those interfaces (Adapters), ensuring business rules are testable and replaceable independently.
+
+### Package Structure
 
 ```
-$ mvn clean install
+br.com.wallet.project
+├── domain/                         ← Pure core — zero framework dependencies
+│   ├── model/
+│   │   ├── Wallet.java             ← Aggregate root (deposit / withdraw)
+│   │   ├── Transaction.java
+│   │   └── TransactionMessage.java ← Domain Event published to Kafka
+│   └── exception/
+│       ├── WalletErrors.java
+│       └── WalletDomainException.java
+│
+├── application/                    ← Use cases and contracts (Ports)
+│   ├── port/
+│   │   ├── in/                     ← Driving Ports
+│   │   │   ├── WalletUseCase.java
+│   │   │   └── TransactionUseCase.java
+│   │   └── out/                    ← Driven Ports
+│   │       ├── WalletRepository.java
+│   │       ├── TransactionRepository.java
+│   │       ├── TransferRepository.java
+│   │       ├── TransactionEventPublisher.java
+│   │       └── IdempotencyRepository.java
+│   ├── command/
+│   │   └── TransactionCommand.java ← Use case intent object
+│   ├── service/
+│   │   ├── WalletService.java      ← Implements WalletUseCase
+│   │   └── TransactionService.java ← Implements TransactionUseCase
+│   └── strategy/
+│       ├── TransactionStrategy.java
+│       ├── TransactionStrategyFactory.java
+│       ├── DepositStrategy.java
+│       ├── WithdrawStrategy.java
+│       └── TransferStrategy.java
+│
+├── adapter/
+│   ├── in/web/                     ← Driving Adapter — REST
+│   │   ├── controller/
+│   │   │   ├── WalletController.java
+│   │   │   └── GlobalExceptionHandler.java
+│   │   ├── request/                ← Inbound DTOs
+│   │   └── response/               ← Outbound DTOs
+│   └── out/
+│       ├── persistence/            ← Driven Adapter — JPA + PostgreSQL
+│       │   ├── WalletPersistenceAdapter.java
+│       │   ├── TransactionPersistenceAdapter.java
+│       │   ├── entity/             ← JPA entities (outside domain)
+│       │   └── jpa/                ← Spring Data Repositories
+│       ├── messaging/kafka/        ← Driven Adapter — Apache Kafka
+│       │   ├── producer/KafkaTransactionEventPublisher.java
+│       │   └── consumer/KafkaTransactionConsumer.java
+│       └── cache/redis/            ← Driven Adapter — Redis
+│           └── RedisIdempotencyAdapter.java
+│
+└── shared/
+    ├── mapper/                     ← Cross-layer converters
+    └── util/MoneyUtil.java
 ```
 
-### 2. Initializing the microservice
+### Layer Responsibilities
 
-- Init docker compose located at `src/main/resources/compose/docker-compose.yml` with the command `docker-compose up`
-- Then you just need to init WalletApplication on any IDEA or run the command `mvn spring-boot:run` from project root directory
+| Layer | Responsibility | Dependencies |
+|---|---|---|
+| **domain** | Business rules, aggregates, domain events | None |
+| **application** | Use cases, ports (contracts), strategies | domain |
+| **adapter/in** | Receive HTTP calls, validate requests | application |
+| **adapter/out** | Persistence, messaging, cache | application |
+| **shared** | Mappers, shared utilities | domain, application |
 
-## API Documentation
+---
 
-- Swagger url is available at http://localhost:8080/wallet/swagger-ui/index.html after the service is up
-- There is also a Postman collection located at ```collections/Wallet.postman_collection.json```
+## Data Models
 
-## Design Choices
+### Wallet
 
-This project was written in Java with Spring Boot, PostgreSQL for database and Kafka to process asynchronous transactions.
-I delivered six endpoints to make some wallet operations: create wallet, retrieve wallet balance, deposit money, withdraw money, transfer money from an account to another and get transaction information by a specific date in the past.
+Aggregate root representing a user's wallet.
 
-Basically, I initially created all the database design and divided into three entities: Wallet, Transaction and Transfer.
-With the Wallet entity I can create my wallet and retrieve wallet balance.
+| Field | Type | Description |
+|---|---|---|
+| `id` | `Long` | Auto-generated PK |
+| `userId` | `String` | Unique user identifier |
+| `balance` | `BigDecimal` | Current balance |
+| `version` | `Long` | Optimistic Locking control |
 
-The Transaction entity was needed for deposit, withdraw and transfer money and transaction history, so when I need to get a transaction history I can filter by date and the wallet user id; and I save beforeBalance and afterBalance for any transaction.
+### Transaction
 
-Transfer entity exists to save relation with deposit money transaction and withdraw money transaction, so I can keep the transfer history in case I need to track it in the future.
+Records each financial operation with a balance snapshot.
 
-Following is the system database diagram:
+| Field | Type | Description |
+|---|---|---|
+| `id` | `Long` | Auto-generated PK |
+| `walletId` | `FK` | Related wallet |
+| `transactionTrackId` | `UUID` | Tracking ID |
+| `type` | `Enum` | `DEPOSIT` / `WITHDRAW` / `TRANSFER` |
+| `amount` | `BigDecimal` | Operation amount |
+| `balanceBeforeTransaction` | `BigDecimal` | Balance before the operation |
+| `balanceAfterTransaction` | `BigDecimal` | Balance after the operation |
+| `timestamp` | `LocalDateTime` | Date and time of operation |
 
-![wallet-system-database-diagram.png](wallet-system-database-diagram.png)
+### Transfer
 
-To treat concurrency I added a field called version into Wallet entity and in any consult into database I use pessimist lock to avoid concurrent instances.
+Records the relationship between both sides of a transfer (debit + credit), enabling full traceability.
 
-Furthermore, when I create deposit, withdraw and transfer money it returns to the user a transaction id and the process occurs asynchronous. This way
+| Field | Type | Description |
+|---|---|---|
+| `id` | `Long` | Auto-generated PK |
+| `fromWalletId` | `FK` | Source wallet |
+| `toWalletId` | `FK` | Destination wallet |
+| `debitTransactionId` | `FK` | Withdraw transaction (source) |
+| `creditTransactionId` | `FK` | Deposit transaction (destination) |
+| `amount` | `BigDecimal` | Transferred amount |
+| `timestamp` | `LocalDateTime` | Date and time of operation |
 
-I can guarantee that transactions will be performed in order. I also can scale my system based on the demand. My system with Kafka is also resilient and failure tolerant.
+---
 
-If an error occurs during a transaction the message will be keeped in the topic and will be processed later (I am commiting messages only after all process - manually).
+## Transaction Flow
 
-My Kafka is FIFO type, first in first out, so in a bank system I can guarantee that operations will be performed without one transaction affecting another one. And when I produce a message to Kafka topic I configured transactions to ensure that only one message will be posted.
+```
+1.  Client → POST /deposit
+2.  WalletController validates the request
+3.  TransactionService builds a TransactionCommand
+4.  KafkaTransactionEventPublisher publishes a message to the wallet-transactions topic
+5.  API returns TransactionResponse immediately (HTTP 200)
 
-Still talking about Kafka, I'm handling failure messages using Kafka Retryable, configuring how many times I want to retry an operation and if it still keep failing, I can send a message to a dead letter queue (dlt).
+          — From this point, processing is asynchronous —
 
-As Design of the application, and with the short time to develop, I chose to create services that are called from controller, in a simple way. But to keep the code more readable I used a Factory and Strategy Design Patterns to organize my code.
+6.  KafkaTransactionConsumer receives the message
+7.  RedisIdempotencyAdapter checks if the idempotencyId was already processed
+    ├── If duplicate → silently discards the message
+    └── If new → registers as IN_PROGRESS
+8.  TransactionStrategyFactory resolves the correct strategy
+    ├── DEPOSIT  → DepositStrategy
+    ├── WITHDRAW → WithdrawStrategy
+    └── TRANSFER → TransferStrategy (2 atomic operations)
+9.  Strategy applies business rules on the Wallet aggregate
+10. WalletPersistenceAdapter updates the balance in PostgreSQL (with lock)
+11. TransactionPersistenceAdapter records the transaction with balance snapshot
+12. Redis entry marked as COMPLETED
+```
 
-I also treated exceptions during the process and log all of them.
-And during system operations I still logged relevant information as transaction id and user id, this way with an error in production for example I can troubleshoot easily.
+---
 
-Unit tests and functional tests with test container were made to maintain code safer.
+## Design Patterns
 
-Due to limited time I couldn't configure security mechanism like Spring Security. Maybe in another version it was cool to implement an access token control on endpoint call.
+| Pattern | Where it is applied |
+|---|---|
+| **Hexagonal / Ports & Adapters** | Full separation between domain and infrastructure |
+| **Strategy** | `DepositStrategy`, `WithdrawStrategy`, `TransferStrategy` |
+| **Factory** | `TransactionStrategyFactory` resolves strategy by `TransactionType` |
+| **Command** | `TransactionCommand` as the use case intent object |
+| **Domain Event** | `TransactionMessage` published to Kafka after intent is registered |
+| **Idempotency** | `IdempotencyRepository` → Redis `setIfAbsent` prevents duplicate processing |
+| **Optimistic Locking** | `@Version` on `WalletEntity` detects concurrent updates |
+| **Pessimistic Locking** | `@Lock(PESSIMISTIC_WRITE)` on `JpaWalletRepository` blocks concurrent reads |
+
+---
+
+## Concurrency & Consistency
+
+The system combines three strategies to ensure consistency under high concurrency:
+
+**Pessimistic Locking (`SELECT FOR UPDATE`):** when fetching a wallet to process a transaction, an exclusive lock is applied at the database level. This ensures no other transaction can read or modify the same record until the current transaction commits.
+
+**Optimistic Locking via `@Version`:** the `version` field on `WalletEntity` is incremented with every update. If two transactions attempt to update the same version simultaneously, the second one receives an `OptimisticLockException` and is rejected.
+
+**Idempotency via Redis:** the `idempotencyId` (UUID provided by the client) is registered in Redis using `setIfAbsent` before any processing begins. If a second message with the same ID arrives (Kafka retry, network failure, etc.), it is discarded before any database operation takes place.
+
+---
+
+## Kafka Resilience
+
+- **FIFO processing:** Kafka guarantees ordering within a partition. Transactions from the same wallet are routed to the same partition, ensuring sequential processing.
+- **Transactional producer:** `@Transactional("kafkaTransactionManager")` guarantees exactly-once delivery — only one message per operation is published, even on application retries.
+- **Automatic retry with backoff:** `@RetryableTopic` with exponential backoff reprocesses messages on transient failures (e.g., database timeout).
+- **Dead Letter Queue (DLQ):** after exhausting all retry attempts, the message is sent to a DLQ topic via `@DltHandler` for manual inspection and reprocessing.
+- **Manual acknowledgment:** the consumer only commits the offset after successful processing (`AcknowledgmentMode.MANUAL`), guaranteeing at-least-once delivery and zero message loss.
+
+---
+
+## Tests
+
+### Unit Tests
+
+Located in `src/test/.../unit/`. Uses **Mockito** to mock repositories and services, testing business logic in complete isolation from infrastructure.
+
+### Functional Tests
+
+Located in `src/test/.../functional/`. Uses **Testcontainers** with the project's `docker-compose.yml` to spin up real instances of PostgreSQL, Kafka and Redis, validating the complete end-to-end flow.
+
+To run unit tests only:
+
+```bash
+mvn test -Dtest="**/unit/**"
+```
+
+To run all tests including functional (requires Docker):
+
+```bash
+mvn verify
+```
+
+---
+
+## Future Improvements
+
+- **Spring Security** — authentication and authorization via JWT / OAuth2
+- **Rate limiting** — protection against endpoint abuse (e.g., Bucket4j)
+- **Observability** — integration with OpenTelemetry / Micrometer / Grafana
+- **Notification service** — notify users after each transaction (email/push)
+- **Pagination** on transaction history results
+- **Multi-currency support** — multiple currencies with conversion rates
+
+---
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
