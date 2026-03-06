@@ -4,7 +4,7 @@ import br.com.wallet.project.controller.response.TransactionResponse;
 import br.com.wallet.project.domain.TransactionMessage;
 import br.com.wallet.project.domain.request.TransactionRequest;
 import br.com.wallet.project.infrastructure.messaging.WalletTransactionProducer;
-import br.com.wallet.project.infrastructure.persistence.WalletPersistence;
+import br.com.wallet.project.infrastructure.persistence.WalletRepository;
 import br.com.wallet.project.mapper.TransactionMessageMapper;
 import br.com.wallet.project.mapper.TransactionResponseMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -18,8 +18,8 @@ import java.util.UUID;
 public class WalletTransactionProcessorServiceMessage extends WalletValidationService implements WalletTransactionMessage {
     private final WalletTransactionProducer walletTransactionProducer;
 
-    public WalletTransactionProcessorServiceMessage(WalletTransactionProducer walletTransactionProducer, WalletPersistence walletPersistence) {
-        super(walletPersistence);
+    public WalletTransactionProcessorServiceMessage(WalletTransactionProducer walletTransactionProducer, WalletRepository walletRepository) {
+        super(walletRepository);
         this.walletTransactionProducer = walletTransactionProducer;
     }
 

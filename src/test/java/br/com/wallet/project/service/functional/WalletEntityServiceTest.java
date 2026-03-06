@@ -2,10 +2,10 @@ package br.com.wallet.project.service.functional;
 
 import br.com.wallet.project.controller.request.WalletRequest;
 import br.com.wallet.project.domain.TransactionType;
+import br.com.wallet.project.domain.model.WalletEntity;
 import br.com.wallet.project.domain.request.TransactionRequest;
 import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaTransactionRepository;
 import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaWalletRepository;
-import br.com.wallet.project.domain.model.Wallet;
 import br.com.wallet.project.domain.service.WalletService;
 import br.com.wallet.project.util.MoneyUtil;
 import lombok.RequiredArgsConstructor;
@@ -56,8 +56,8 @@ class WalletServiceTest implements TestContainerSetup {
                         idempotencyId);
         walletService.transactionProcessor(transactionRequest);
         Thread.sleep(2000);
-        Wallet walletAfterOperation = jpaWalletRepository.findByUserId(userId);
-        assertEquals(MoneyUtil.format(BigDecimal.valueOf(100.0)), walletAfterOperation.getBalance());
+        WalletEntity walletEntityAfterOperation = jpaWalletRepository.findByUserId(userId);
+        assertEquals(MoneyUtil.format(BigDecimal.valueOf(100.0)), walletEntityAfterOperation.getBalance());
         assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionId));
     }
 
@@ -96,8 +96,8 @@ class WalletServiceTest implements TestContainerSetup {
         walletService.transactionProcessor(transactionWithdrawRequest);
 
         Thread.sleep(2000);
-        Wallet walletAfterOperation = jpaWalletRepository.findByUserId(userId);
-        assertEquals(MoneyUtil.format(BigDecimal.valueOf(90.0)), walletAfterOperation.getBalance());
+        WalletEntity walletEntityAfterOperation = jpaWalletRepository.findByUserId(userId);
+        assertEquals(MoneyUtil.format(BigDecimal.valueOf(90.0)), walletEntityAfterOperation.getBalance());
         assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionDepositId));
         assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionWithdrawId));
     }
@@ -140,11 +140,11 @@ class WalletServiceTest implements TestContainerSetup {
 
         Thread.sleep(2000);
 
-        Wallet walletAfterOperationFromUserId = jpaWalletRepository.findByUserId(fromUserId);
-        assertEquals(MoneyUtil.format(BigDecimal.valueOf(90.00)), walletAfterOperationFromUserId.getBalance());
+        WalletEntity walletEntityAfterOperationFromUserId = jpaWalletRepository.findByUserId(fromUserId);
+        assertEquals(MoneyUtil.format(BigDecimal.valueOf(90.00)), walletEntityAfterOperationFromUserId.getBalance());
 
-        Wallet walletAfterOperationToUserId = jpaWalletRepository.findByUserId(toUserId);
-        assertEquals(MoneyUtil.format(BigDecimal.valueOf(10.00)), walletAfterOperationToUserId.getBalance());
+        WalletEntity walletEntityAfterOperationToUserId = jpaWalletRepository.findByUserId(toUserId);
+        assertEquals(MoneyUtil.format(BigDecimal.valueOf(10.00)), walletEntityAfterOperationToUserId.getBalance());
 
         assertNotNull(jpaTransactionRepository.findByTransactionTrackId(transactionDepositId));
         assertEquals(2, jpaTransactionRepository.findByTransactionTrackId(transferTransactionId).size());

@@ -1,9 +1,10 @@
 package br.com.wallet.project.domain.service;
 
-import br.com.wallet.project.infrastructure.persistence.WalletPersistence;
-import br.com.wallet.project.domain.model.Wallet;
+import br.com.wallet.project.domain.dto.WalletDTO;
+import br.com.wallet.project.infrastructure.persistence.WalletRepository;
 import br.com.wallet.project.domain.enums.WalletErrors;
 import br.com.wallet.project.exception.WalletException;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,16 +15,16 @@ import java.util.UUID;
 @Service
 @Slf4j
 public abstract class WalletValidationService {
-    private final WalletPersistence walletPersistence;
+    private final WalletRepository walletRepository;
 
-    public WalletValidationService(WalletPersistence walletPersistence) {
-        this.walletPersistence = walletPersistence;
+    public WalletValidationService(WalletRepository walletRepository) {
+        this.walletRepository = walletRepository;
     }
 
     @Transactional("transactionManager")
-    public Wallet validateWallet(String userId) {
-        Wallet wallet = walletPersistence.findByUserId(userId);
-        if(wallet == null) {
+    public WalletDTO validateWallet(String userId) {
+        WalletDTO wallet = walletRepository.findByUserId(userId);
+        if (wallet == null) {
             log.error("Wallet does not exists for user id {}", userId);
             throw new WalletException(
                     MessageFormat.format(
@@ -35,9 +36,9 @@ public abstract class WalletValidationService {
     }
 
     @Transactional("transactionManager")
-    public Wallet validateWallet(String userId, UUID transactionId) {
-        Wallet wallet = walletPersistence.findByUserId(userId);
-        if(wallet == null) {
+    public WalletDTO validateWallet(String userId, UUID transactionId) {
+        WalletDTO wallet = walletRepository.findByUserId(userId);
+        if (wallet == null) {
             log.error("Wallet does not exists for user id {}. Transaction id {}.", userId, transactionId);
             throw new WalletException(
                     MessageFormat.format(
