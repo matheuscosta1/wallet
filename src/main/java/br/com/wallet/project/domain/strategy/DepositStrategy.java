@@ -4,8 +4,8 @@ import br.com.wallet.project.domain.TransactionType;
 import br.com.wallet.project.domain.dto.TransactionDTO;
 import br.com.wallet.project.domain.dto.WalletDTO;
 import br.com.wallet.project.domain.request.TransactionRequest;
-import br.com.wallet.project.infrastructure.persistence.TransactionPersistence;
-import br.com.wallet.project.infrastructure.persistence.WalletPersistence;
+import br.com.wallet.project.infrastructure.persistence.TransactionRepository;
+import br.com.wallet.project.infrastructure.persistence.WalletRepository;
 import br.com.wallet.project.domain.service.WalletValidationService;
 import br.com.wallet.project.mapper.TransactionDomainMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -16,13 +16,13 @@ import java.math.BigDecimal;
 @Component
 @Slf4j
 public class DepositStrategy extends WalletValidationService implements TransactionStrategy {
-    private final WalletPersistence walletPersistence;
-    private final TransactionPersistence transactionPersistence;
+    private final WalletRepository walletRepository;
+    private final TransactionRepository transactionRepository;
 
-    public DepositStrategy(WalletPersistence walletPersistence, TransactionPersistence transactionPersistence) {
-        super(walletPersistence);
-        this.walletPersistence = walletPersistence;
-        this.transactionPersistence = transactionPersistence;
+    public DepositStrategy(WalletRepository walletRepository, TransactionRepository transactionRepository) {
+        super(walletRepository);
+        this.walletRepository = walletRepository;
+        this.transactionRepository = transactionRepository;
     }
 
     @Override
@@ -32,8 +32,8 @@ public class DepositStrategy extends WalletValidationService implements Transact
         WalletDTO wallet = validateWallet(transactionRequest.getUserId(), transactionRequest.getTransactionId());
         BigDecimal balanceBefore = wallet.getBalance();
         wallet.depositMoney(transactionRequest.getAmount(), transactionRequest.getTransactionId());
-        walletPersistence.save(wallet);
-        TransactionDTO transaction = transactionPersistence.save(
+        walletRepository.save(wallet);
+        TransactionDTO transaction = transactionRepository.save(
                 TransactionDomainMapper.fromTransactionRequest(
                         transactionRequest, wallet, TransactionType.DEPOSIT, balanceBefore, wallet.getBalance()));
         log.info("Finished deposit funds for user id: {} and transaction id {}",

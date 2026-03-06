@@ -6,9 +6,8 @@ import br.com.wallet.project.domain.dto.WalletDTO;
 import br.com.wallet.project.domain.request.TransactionRequest;
 import br.com.wallet.project.mapper.TransactionRequestMapper;
 import br.com.wallet.project.mapper.TransferMapper;
-import br.com.wallet.project.infrastructure.persistence.TransferPersistence;
-import br.com.wallet.project.infrastructure.persistence.WalletPersistence;
-import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaTransactionRepository;
+import br.com.wallet.project.infrastructure.persistence.TransferRepository;
+import br.com.wallet.project.infrastructure.persistence.WalletRepository;
 import br.com.wallet.project.domain.service.WalletValidationService;
 import br.com.wallet.project.domain.service.TransactionProcessorService;
 import lombok.extern.slf4j.Slf4j;
@@ -18,15 +17,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @Slf4j
 public class TransferStrategy extends WalletValidationService implements TransactionStrategy {
-    private final TransferPersistence transferPersistence;
+    private final TransferRepository transferRepository;
     private final TransactionProcessorService transactionProcessorService;
 
-    public TransferStrategy(WalletPersistence walletPersistence,
-                            TransferPersistence transferPersistence,
-                            JpaTransactionRepository jpaTransactionRepository,
+    public TransferStrategy(WalletRepository walletRepository,
+                            TransferRepository transferRepository,
                             TransactionProcessorService transactionProcessorService) {
-        super(walletPersistence);
-        this.transferPersistence = transferPersistence;
+        super(walletRepository);
+        this.transferRepository = transferRepository;
         this.transactionProcessorService = transactionProcessorService;
     }
 
@@ -58,7 +56,7 @@ public class TransferStrategy extends WalletValidationService implements Transac
         );
         TransactionDTO depositTransaction = transactionProcessorService.processTransaction(depositRequest, TransactionType.DEPOSIT);
 
-        transferPersistence.save(
+        transferRepository.save(
                 TransferMapper.mapTransferEntity(
                         toUserWallet,
                         fromUserWallet,

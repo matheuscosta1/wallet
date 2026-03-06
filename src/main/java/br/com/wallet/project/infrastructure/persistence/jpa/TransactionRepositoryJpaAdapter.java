@@ -2,7 +2,7 @@ package br.com.wallet.project.infrastructure.persistence.jpa;
 
 import br.com.wallet.project.domain.dto.TransactionDTO;
 import br.com.wallet.project.domain.model.TransactionEntity;
-import br.com.wallet.project.infrastructure.persistence.TransactionPersistence;
+import br.com.wallet.project.infrastructure.persistence.TransactionRepository;
 import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaTransactionRepository;
 import br.com.wallet.project.mapper.TransactionDomainMapper;
 import org.springframework.stereotype.Repository;
@@ -12,10 +12,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Repository
-public class JpaTransactionPersistence implements TransactionPersistence {
+public class TransactionRepositoryJpaAdapter implements TransactionRepository {
     private final JpaTransactionRepository jpaTransactionRepository;
 
-    public JpaTransactionPersistence(JpaTransactionRepository jpaTransactionRepository) {
+    public TransactionRepositoryJpaAdapter(JpaTransactionRepository jpaTransactionRepository) {
         this.jpaTransactionRepository = jpaTransactionRepository;
     }
 

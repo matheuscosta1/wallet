@@ -10,8 +10,8 @@ import br.com.wallet.project.domain.request.TransactionRequest;
 import br.com.wallet.project.infrastructure.cache.redis.RedisOperation;
 import br.com.wallet.project.mapper.TransactionHistoryMapper;
 import br.com.wallet.project.mapper.WalletMapper;
-import br.com.wallet.project.infrastructure.persistence.TransactionPersistence;
-import br.com.wallet.project.infrastructure.persistence.WalletPersistence;
+import br.com.wallet.project.infrastructure.persistence.TransactionRepository;
+import br.com.wallet.project.infrastructure.persistence.WalletRepository;
 import br.com.wallet.project.domain.enums.WalletErrors;
 import br.com.wallet.project.exception.WalletException;
 import br.com.wallet.project.util.MoneyUtil;
@@ -28,22 +28,22 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class WalletService extends WalletValidationService {
-    private final WalletPersistence walletPersistence;
-    private final TransactionPersistence transactionPersistence;
+    private final WalletRepository walletRepository;
+    private final TransactionRepository transactionRepository;
     private final TransactionProcessorService transactionProcessorService;
     private final RedisOperation redisOperation;
 
-    public WalletService(WalletPersistence walletPersistence, TransactionPersistence transactionPersistence, TransactionProcessorService transactionProcessorService, RedisOperation redisOperation) {
-        super(walletPersistence);
-        this.walletPersistence = walletPersistence;
-        this.transactionPersistence = transactionPersistence;
+    public WalletService(WalletRepository walletRepository, TransactionRepository transactionRepository, TransactionProcessorService transactionProcessorService, RedisOperation redisOperation) {
+        super(walletRepository);
+        this.walletRepository = walletRepository;
+        this.transactionRepository = transactionRepository;
         this.transactionProcessorService = transactionProcessorService;
         this.redisOperation = redisOperation;
     }
 
     @Transactional("transactionManager")
     public WalletResponse createWallet(WalletRequest walletRequest) {
-        WalletDTO wallet = walletPersistence.findByUserId(walletRequest.getUserId());
+        WalletDTO wallet = walletRepository.findByUserId(walletRequest.getUserId());
         if(wallet != null) {
             throw new WalletException(
                     MessageFormat.format(
@@ -52,7 +52,7 @@ public class WalletService extends WalletValidationService {
                     WalletErrors.W0001.group());
         }
         WalletDTO newWallet = WalletMapper.mapWalletRequestIntoWalletDomain(walletRequest);
-        walletPersistence.save(newWallet);
+        walletRepository.save(newWallet);
         return WalletResponse
                 .builder()
                 .balance(MoneyUtil.format(newWallet.getBalance()))
@@ -76,7 +76,7 @@ public class WalletService extends WalletValidationService {
         LocalDateTime startOfDay = LocalDateTime.of(walletRequest.getDate().toLocalDate(), LocalTime.MIDNIGHT);
         LocalDateTime endOfDay = LocalDateTime.of(walletRequest.getDate().toLocalDate(), LocalTime.MAX);
 
-        List<TransactionDTO> transactions = transactionPersistence.findTransactionsByDateAndUserId(startOfDay, endOfDay, walletRequest.getUserId());
+        List<TransactionDTO> transactions = transactionRepository.findTransactionsByDateAndUserId(startOfDay, endOfDay, walletRequest.getUserId());
 
         return transactions.stream()
                 .map(TransactionHistoryMapper::mapToTransactionHistoryResponse)
