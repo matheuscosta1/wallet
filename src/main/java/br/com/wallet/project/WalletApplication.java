@@ -8,12 +8,12 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 
 @SpringBootApplication
-@EnableJpaRepositories("br.com.wallet.project.*")
+@EnableJpaRepositories("br.com.wallet.project.adapter.out.persistence.jpa")
 @EnableRedisRepositories
-@ComponentScan(basePackages = {"br.com.wallet.project.*"})
-@EntityScan("br.com.wallet.project.*")
+@ComponentScan(basePackages = {"br.com.wallet.project"})
+@EntityScan("br.com.wallet.project.adapter.out.persistence.entity")
 public class WalletApplication {
-  public static void main(String[] args) {
-    SpringApplication.run(WalletApplication.class, args);
-  }
+    public static void main(String[] args) {
+        SpringApplication.run(WalletApplication.class, args);
+    }
 }

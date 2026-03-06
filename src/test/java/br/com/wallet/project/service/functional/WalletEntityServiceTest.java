@@ -1,13 +1,14 @@
 package br.com.wallet.project.service.functional;
 
-import br.com.wallet.project.controller.request.WalletRequest;
-import br.com.wallet.project.domain.TransactionType;
-import br.com.wallet.project.domain.model.WalletEntity;
-import br.com.wallet.project.domain.request.TransactionRequest;
-import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaTransactionRepository;
-import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaWalletRepository;
-import br.com.wallet.project.domain.service.WalletService;
-import br.com.wallet.project.util.MoneyUtil;
+import br.com.wallet.project.adapter.in.web.request.WalletRequest;
+import br.com.wallet.project.adapter.out.persistence.entity.WalletEntity;
+import br.com.wallet.project.adapter.out.persistence.jpa.JpaTransactionRepository;
+import br.com.wallet.project.adapter.out.persistence.jpa.JpaWalletRepository;
+import br.com.wallet.project.application.command.TransactionCommand;
+import br.com.wallet.project.application.service.TransactionService;
+import br.com.wallet.project.application.service.WalletService;
+import br.com.wallet.project.domain.model.enums.TransactionType;
+import br.com.wallet.project.shared.util.MoneyUtil;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,9 +24,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @SpringBootTest
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 @RequiredArgsConstructor
-class WalletServiceTest implements TestContainerSetup {
+class WalletEntityServiceTest implements TestContainerSetup {
 
     private final WalletService walletService;
+    private final TransactionService transactionService;
     private final JpaWalletRepository jpaWalletRepository;
     private final JpaTransactionRepository jpaTransactionRepository;
 
@@ -45,8 +47,8 @@ class WalletServiceTest implements TestContainerSetup {
         UUID idempotencyId = UUID.randomUUID();
         BigDecimal funds = BigDecimal.valueOf(100.0);
         walletService.createWallet(buildWalletRequest(userId));
-        TransactionRequest transactionRequest =
-                buildTransactionRequest(
+        TransactionCommand transactionRequest =
+                buildTransactionCommand(
                         userId,
                         transactionId,
                         funds,
@@ -54,7 +56,7 @@ class WalletServiceTest implements TestContainerSetup {
                         null,
                         null,
                         idempotencyId);
-        walletService.transactionProcessor(transactionRequest);
+        transactionService.processTransaction(transactionRequest);
         Thread.sleep(2000);
         WalletEntity walletEntityAfterOperation = jpaWalletRepository.findByUserId(userId);
         assertEquals(MoneyUtil.format(BigDecimal.valueOf(100.0)), walletEntityAfterOperation.getBalance());
@@ -73,8 +75,8 @@ class WalletServiceTest implements TestContainerSetup {
 
         walletService.createWallet(buildWalletRequest(userId));
 
-        TransactionRequest transactionDepositRequest =
-                buildTransactionRequest(
+        TransactionCommand transactionDepositRequest =
+                buildTransactionCommand(
                         userId,
                         transactionDepositId,
                         funds,
@@ -82,10 +84,10 @@ class WalletServiceTest implements TestContainerSetup {
                         null,
                         null,
                         transactionDepositRequestIdempotencyId);
-        walletService.transactionProcessor(transactionDepositRequest);
+        transactionService.processTransaction(transactionDepositRequest);
 
-        TransactionRequest transactionWithdrawRequest =
-                buildTransactionRequest(
+        TransactionCommand transactionWithdrawRequest =
+                buildTransactionCommand(
                         userId,
                         transactionWithdrawId,
                         BigDecimal.TEN,
@@ -93,7 +95,7 @@ class WalletServiceTest implements TestContainerSetup {
                         null,
                         null,
                         transactionWithdrawRequestIdempotencyId);
-        walletService.transactionProcessor(transactionWithdrawRequest);
+        transactionService.processTransaction(transactionWithdrawRequest);
 
         Thread.sleep(2000);
         WalletEntity walletEntityAfterOperation = jpaWalletRepository.findByUserId(userId);
@@ -116,8 +118,8 @@ class WalletServiceTest implements TestContainerSetup {
         walletService.createWallet(buildWalletRequest(fromUserId));
         walletService.createWallet(buildWalletRequest(toUserId));
 
-        TransactionRequest transactionDepositRequest =
-                buildTransactionRequest(
+        TransactionCommand transactionDepositRequest =
+                buildTransactionCommand(
                         fromUserId,
                         transactionDepositId,
                         funds,
@@ -125,10 +127,10 @@ class WalletServiceTest implements TestContainerSetup {
                         null,
                         null,
                         transactionDepositRequestIdempotencyId);
-        walletService.transactionProcessor(transactionDepositRequest);
+        transactionService.processTransaction(transactionDepositRequest);
 
-        TransactionRequest transferRequest =
-                buildTransactionRequest(
+        TransactionCommand transferRequest =
+                buildTransactionCommand(
                         null,
                         transferTransactionId,
                         BigDecimal.valueOf(10),
@@ -136,7 +138,7 @@ class WalletServiceTest implements TestContainerSetup {
                         fromUserId,
                         toUserId,
                         transferRequestIdempotencyId);
-        walletService.transactionProcessor(transferRequest);
+        transactionService.processTransaction(transferRequest);
 
         Thread.sleep(2000);
 
@@ -154,7 +156,7 @@ class WalletServiceTest implements TestContainerSetup {
         return new WalletRequest(userId);
     }
 
-    private static TransactionRequest buildTransactionRequest(
+    private static TransactionCommand buildTransactionCommand(
             String userId,
             UUID transactionId,
             BigDecimal amount,
@@ -163,7 +165,7 @@ class WalletServiceTest implements TestContainerSetup {
             String toUserWalletId,
             UUID idempotencyId
     ) {
-        return TransactionRequest
+        return TransactionCommand
                 .builder()
                 .userId(userId)
                 .transactionId(transactionId)

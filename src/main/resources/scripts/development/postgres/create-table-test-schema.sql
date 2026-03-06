@@ -4,7 +4,6 @@ CREATE TABLE wallets (
     balance DECIMAL(19, 4) NOT NULL,
     version BIGINT NOT NULL DEFAULT 0
 );
-
 CREATE TABLE transactions (
     id SERIAL PRIMARY KEY,
     wallet_id INT NOT NULL,
@@ -16,7 +15,6 @@ CREATE TABLE transactions (
     balance_after_transaction DECIMAL(19, 4) NOT NULL,
     CONSTRAINT fk_transactions_wallet FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON DELETE CASCADE
 );
-
 CREATE TABLE transfers (
     id SERIAL PRIMARY KEY,
     from_wallet_id INT NOT NULL,

@@ -7,17 +7,10 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class SwaggerConfiguration {
+    private static final String DESCRIPTION = "Wallet system to operate deposit, withdraw, transfer and history transactions.";
 
-  private static final String DESCRIPTION =
-      "Wallet system to operate deposit, withdraw, transfer and history transactions.";
-
-  @Bean
-  public OpenAPI springShopOpenAPI() {
-    return new OpenAPI()
-        .info(
-            new Info()
-                .title("Wallet 1.0.0")
-                .description(DESCRIPTION)
-                .version("1.0.0"));
-  }
+    @Bean
+    public OpenAPI springShopOpenAPI() {
+        return new OpenAPI().info(new Info().title("Wallet 1.0.0").description(DESCRIPTION).version("1.0.0"));
+    }
 }

@@ -1,17 +1,17 @@
 package br.com.wallet.project.service.unit;
 
-import br.com.wallet.project.controller.request.HistoryTransactionRequest;
-import br.com.wallet.project.controller.request.WalletRequest;
-import br.com.wallet.project.controller.response.TransactionHistoryResponse;
-import br.com.wallet.project.controller.response.WalletResponse;
-import br.com.wallet.project.domain.dto.TransactionDTO;
-import br.com.wallet.project.domain.dto.WalletDTO;
-import br.com.wallet.project.infrastructure.persistence.TransactionRepository;
-import br.com.wallet.project.infrastructure.persistence.WalletRepository;
-import br.com.wallet.project.domain.service.TransactionProcessorService;
-import br.com.wallet.project.domain.service.WalletService;
-import br.com.wallet.project.exception.WalletException;
-import br.com.wallet.project.util.MoneyUtil;
+import br.com.wallet.project.adapter.in.web.request.HistoryTransactionRequest;
+import br.com.wallet.project.adapter.in.web.request.WalletRequest;
+import br.com.wallet.project.adapter.in.web.response.TransactionHistoryResponse;
+import br.com.wallet.project.adapter.in.web.response.WalletResponse;
+import br.com.wallet.project.application.port.out.TransactionRepository;
+import br.com.wallet.project.application.port.out.WalletRepository;
+import br.com.wallet.project.application.service.TransactionService;
+import br.com.wallet.project.application.service.WalletService;
+import br.com.wallet.project.domain.exception.WalletDomainException;
+import br.com.wallet.project.domain.model.Transaction;
+import br.com.wallet.project.domain.model.Wallet;
+import br.com.wallet.project.shared.util.MoneyUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -33,7 +33,7 @@ class WalletEntityServiceTest {
     @Mock
     TransactionRepository transactionRepository;
     @Mock
-    TransactionProcessorService transactionProcessorService;
+    TransactionService transactionService;
     @InjectMocks
     WalletService walletService;
 
@@ -64,8 +64,8 @@ class WalletEntityServiceTest {
     @Test
     void testRetrieveBalanceHistory() {
         when(walletRepository.findByUserId(anyString())).thenReturn(buildWalletEntity());
-        when(transactionRepository.findTransactionsByDateAndUserId(any(LocalDateTime.class), any(LocalDateTime.class), anyString())).thenReturn(List.of(buildTransactionEntity()));
-        List<TransactionHistoryResponse> result = walletService.retrieveBalanceHistory(new HistoryTransactionRequest("userId", LocalDateTime.of(2025, Month.FEBRUARY, 21, 19, 28, 8)));
+        when(transactionRepository.findByDateRangeAndUserId(any(LocalDateTime.class), any(LocalDateTime.class), anyString())).thenReturn(List.of(buildTransactionEntity()));
+        List<TransactionHistoryResponse> result = walletService.retrieveTransactionHistory(new HistoryTransactionRequest("userId", LocalDateTime.of(2025, Month.FEBRUARY, 21, 19, 28, 8)));
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals("userId", result.getFirst().getUserId());
@@ -74,7 +74,7 @@ class WalletEntityServiceTest {
     @Test
     void testValidateWallet() {
         when(walletRepository.findByUserId(anyString())).thenReturn(buildWalletEntity());
-        WalletDTO result = walletService.validateWallet("userId");
+        Wallet result = walletService.validateWallet("userId");
         assertEquals("userId", result.getUserId());
         assertEquals(BigDecimal.TEN, result.getBalance());
     }
@@ -82,13 +82,13 @@ class WalletEntityServiceTest {
     @Test
     void shouldThrowErrorWhenValidateWallet() {
         when(walletRepository.findByUserId(anyString())).thenReturn(null);
-        assertThrows(WalletException.class, () -> walletService.validateWallet("userId"));
+        assertThrows(WalletDomainException.class, () -> walletService.validateWallet("userId"));
     }
 
     @Test
     void testValidateWallet2() {
         when(walletRepository.findByUserId(anyString())).thenReturn(buildWalletEntity());
-        WalletDTO result = walletService.validateWallet("userId", UUID.randomUUID());
+        Wallet result = walletService.validateWallet("userId", UUID.randomUUID());
         assertEquals("userId", result.getUserId());
         assertEquals(BigDecimal.TEN, result.getBalance());
     }
@@ -96,15 +96,15 @@ class WalletEntityServiceTest {
     @Test
     void shouldThrowErrorWhenValidateWallet2() {
         when(walletRepository.findByUserId(anyString())).thenReturn(null);
-        assertThrows(WalletException.class, () -> walletService.validateWallet("userId", UUID.randomUUID()));
+        assertThrows(WalletDomainException.class, () -> walletService.validateWallet("userId", UUID.randomUUID()));
     }
 
     private static WalletRequest buildWalletRequest(String userId) {
         return new WalletRequest(userId);
     }
 
-    private static WalletDTO buildWalletEntity() {
-        return WalletDTO
+    private static Wallet buildWalletEntity() {
+        return Wallet
                 .builder()
                 .userId("userId")
                 .balance(BigDecimal.TEN)
@@ -113,8 +113,8 @@ class WalletEntityServiceTest {
                 .build();
     }
 
-    private static TransactionDTO buildTransactionEntity() {
-        return TransactionDTO
+    private static Transaction buildTransactionEntity() {
+        return Transaction
                 .builder()
                 .timestamp(LocalDateTime.now())
                 .wallet(buildWalletEntity())
