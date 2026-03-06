@@ -4,14 +4,14 @@ import br.com.wallet.project.controller.request.HistoryTransactionRequest;
 import br.com.wallet.project.controller.request.WalletRequest;
 import br.com.wallet.project.controller.response.TransactionHistoryResponse;
 import br.com.wallet.project.controller.response.WalletResponse;
+import br.com.wallet.project.domain.dto.TransactionDTO;
+import br.com.wallet.project.domain.dto.WalletDTO;
 import br.com.wallet.project.domain.request.TransactionRequest;
 import br.com.wallet.project.infrastructure.cache.redis.RedisOperation;
 import br.com.wallet.project.mapper.TransactionHistoryMapper;
 import br.com.wallet.project.mapper.WalletMapper;
 import br.com.wallet.project.infrastructure.persistence.TransactionPersistence;
 import br.com.wallet.project.infrastructure.persistence.WalletPersistence;
-import br.com.wallet.project.domain.model.Transaction;
-import br.com.wallet.project.domain.model.Wallet;
 import br.com.wallet.project.domain.enums.WalletErrors;
 import br.com.wallet.project.exception.WalletException;
 import br.com.wallet.project.util.MoneyUtil;
@@ -43,7 +43,7 @@ public class WalletService extends WalletValidationService {
 
     @Transactional("transactionManager")
     public WalletResponse createWallet(WalletRequest walletRequest) {
-        Wallet wallet = walletPersistence.findByUserId(walletRequest.getUserId());
+        WalletDTO wallet = walletPersistence.findByUserId(walletRequest.getUserId());
         if(wallet != null) {
             throw new WalletException(
                     MessageFormat.format(
@@ -51,7 +51,7 @@ public class WalletService extends WalletValidationService {
                     WalletErrors.W0001.name(),
                     WalletErrors.W0001.group());
         }
-        Wallet newWallet = WalletMapper.mapWalletRequestIntoWalletEntity(walletRequest);
+        WalletDTO newWallet = WalletMapper.mapWalletRequestIntoWalletDomain(walletRequest);
         walletPersistence.save(newWallet);
         return WalletResponse
                 .builder()
@@ -62,7 +62,7 @@ public class WalletService extends WalletValidationService {
 
     @Transactional("transactionManager")
     public WalletResponse retrieveBalance(WalletRequest walletRequest) {
-        Wallet wallet = validateWallet(walletRequest.getUserId());
+        WalletDTO wallet = validateWallet(walletRequest.getUserId());
         return WalletResponse
                 .builder()
                 .balance(MoneyUtil.format(wallet.getBalance()))
@@ -76,7 +76,7 @@ public class WalletService extends WalletValidationService {
         LocalDateTime startOfDay = LocalDateTime.of(walletRequest.getDate().toLocalDate(), LocalTime.MIDNIGHT);
         LocalDateTime endOfDay = LocalDateTime.of(walletRequest.getDate().toLocalDate(), LocalTime.MAX);
 
-        List<Transaction> transactions = transactionPersistence.findTransactionsByDateAndUserId(startOfDay, endOfDay, walletRequest.getUserId());
+        List<TransactionDTO> transactions = transactionPersistence.findTransactionsByDateAndUserId(startOfDay, endOfDay, walletRequest.getUserId());
 
         return transactions.stream()
                 .map(TransactionHistoryMapper::mapToTransactionHistoryResponse)

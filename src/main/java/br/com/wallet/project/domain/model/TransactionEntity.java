@@ -17,7 +17,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "transactions")
-public class Transaction {
+public class TransactionEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,7 +25,7 @@ public class Transaction {
 
     @ManyToOne
     @JoinColumn(name = "wallet_id", nullable = false)
-    private Wallet wallet;
+    private WalletEntity walletEntity;
 
     @Column(nullable = false, scale = 2)
     private BigDecimal amount;

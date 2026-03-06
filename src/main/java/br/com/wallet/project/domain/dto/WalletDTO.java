@@ -1,42 +1,27 @@
-package br.com.wallet.project.domain.model;
+package br.com.wallet.project.domain.dto;
 
 import br.com.wallet.project.domain.enums.WalletErrors;
 import br.com.wallet.project.exception.WalletException;
 import br.com.wallet.project.util.MoneyUtil;
-import jakarta.persistence.*;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.text.MessageFormat;
-import java.util.List;
 import java.util.UUID;
 
-@Entity
-@Builder
 @Getter
 @Setter
-@Table(name = "wallets")
-@NoArgsConstructor
+@Builder
 @AllArgsConstructor
+@NoArgsConstructor
 @Slf4j
-public class Wallet {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+public class WalletDTO {
+
     private Long id;
-
-    @Column(nullable = false, unique = true)
     private String userId;
-
-    @Column(nullable = false, scale = 2)
     private BigDecimal balance;
-
-    @Version
     private Long version;
-    
-    @OneToMany(mappedBy = "wallet", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Transaction> transactions;
 
     public void depositMoney(BigDecimal amount, UUID transactionId) {
         if (amount.compareTo(BigDecimal.ZERO) <= 0) {

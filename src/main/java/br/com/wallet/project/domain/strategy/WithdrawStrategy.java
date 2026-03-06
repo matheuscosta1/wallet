@@ -1,8 +1,8 @@
 package br.com.wallet.project.domain.strategy;
 
 import br.com.wallet.project.domain.TransactionType;
-import br.com.wallet.project.domain.model.Transaction;
-import br.com.wallet.project.domain.model.Wallet;
+import br.com.wallet.project.domain.dto.TransactionDTO;
+import br.com.wallet.project.domain.dto.WalletDTO;
 import br.com.wallet.project.domain.request.TransactionRequest;
 import br.com.wallet.project.domain.service.WalletValidationService;
 import br.com.wallet.project.infrastructure.persistence.TransactionPersistence;
@@ -26,13 +26,13 @@ public class WithdrawStrategy extends WalletValidationService implements Transac
     }
 
     @Override
-    public Transaction execute(TransactionRequest transactionRequest) {
+    public TransactionDTO execute(TransactionRequest transactionRequest) {
         log.info("Withdraw funds for user id: {} and transaction id {} started to process", transactionRequest.getUserId(), transactionRequest.getTransactionId());
-        Wallet wallet = validateWallet(transactionRequest.getUserId(), transactionRequest.getTransactionId());
+        WalletDTO wallet = validateWallet(transactionRequest.getUserId(), transactionRequest.getTransactionId());
         BigDecimal actualBalance = wallet.getBalance();
         wallet.withdrawMoney(transactionRequest.getAmount(), transactionRequest.getTransactionId());
         walletPersistence.save(wallet);
-        Transaction transaction =
+        TransactionDTO transaction =
             transactionPersistence.save(
                 TransactionMapper.mapTransactionRequestIntoTransactionEntity(
                         transactionRequest,

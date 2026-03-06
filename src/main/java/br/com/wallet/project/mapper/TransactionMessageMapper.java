@@ -1,12 +1,9 @@
 package br.com.wallet.project.mapper;
 
-import br.com.wallet.project.controller.response.TransactionHistoryResponse;
 import br.com.wallet.project.domain.TransactionMessage;
 import br.com.wallet.project.domain.TransactionType;
-import br.com.wallet.project.domain.model.Transaction;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.UUID;
 
 public class TransactionMessageMapper {

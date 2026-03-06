@@ -1,8 +1,8 @@
 package br.com.wallet.project.infrastructure.persistence;
 
-import br.com.wallet.project.domain.model.Wallet;
+import br.com.wallet.project.domain.dto.WalletDTO;
 
 public interface WalletPersistence {
-    Wallet findByUserId(String userId);
-    void save(Wallet wallet);
+    WalletDTO findByUserId(String userId);
+    void save(WalletDTO walletDTO);
 }

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 @Entity
 @Builder
 @Table(name = "transfers") //TODO: grava as transferencias -- será feito por último essa etapa
-public class Transfer {
+public class TransferEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -17,11 +17,11 @@ public class Transfer {
 
     @ManyToOne
     @JoinColumn(name = "from_wallet_id", nullable = false)
-    private Wallet fromWallet;
+    private WalletEntity fromWalletEntity;
 
     @ManyToOne
     @JoinColumn(name = "to_wallet_id", nullable = false)
-    private Wallet toWallet;
+    private WalletEntity toWalletEntity;
 
     @Column(nullable = false)
     private BigDecimal amount;
@@ -31,9 +31,9 @@ public class Transfer {
 
     @OneToOne
     @JoinColumn(name = "debit_transaction_id", nullable = false)
-    private Transaction debitTransaction;
+    private TransactionEntity debitTransactionEntity;
 
     @OneToOne
     @JoinColumn(name = "credit_transaction_id", nullable = false)
-    private Transaction creditTransaction;
+    private TransactionEntity creditTransactionEntity;
 }

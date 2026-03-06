@@ -1,8 +1,10 @@
 package br.com.wallet.project.infrastructure.persistence.jpa;
 
-import br.com.wallet.project.domain.model.Wallet;
+import br.com.wallet.project.domain.dto.WalletDTO;
+import br.com.wallet.project.domain.model.WalletEntity;
 import br.com.wallet.project.infrastructure.persistence.WalletPersistence;
 import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaWalletRepository;
+import br.com.wallet.project.mapper.WalletDomainMapper;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -14,12 +16,14 @@ public class JpaWalletPersistence implements WalletPersistence {
     }
 
     @Override
-    public Wallet findByUserId(String userId) {
-        return jpaWalletRepository.findByUserId(userId);
+    public WalletDTO findByUserId(String userId) {
+        WalletEntity walletEntity = jpaWalletRepository.findByUserId(userId);
+        return WalletDomainMapper.toWalletDomain(walletEntity);
     }
 
     @Override
-    public void save(Wallet wallet) {
-        jpaWalletRepository.save(wallet);
+    public void save(WalletDTO walletDTO) {
+        WalletEntity entity = WalletDomainMapper.toWalletEntity(walletDTO);
+        jpaWalletRepository.save(entity);
     }
 }

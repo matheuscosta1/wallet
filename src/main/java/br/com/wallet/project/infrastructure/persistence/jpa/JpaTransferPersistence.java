@@ -1,6 +1,6 @@
 package br.com.wallet.project.infrastructure.persistence.jpa;
 
-import br.com.wallet.project.domain.model.Transfer;
+import br.com.wallet.project.domain.model.TransferEntity;
 import br.com.wallet.project.infrastructure.persistence.TransferPersistence;
 import br.com.wallet.project.infrastructure.persistence.jpa.repository.JpaTransferRepository;
 import org.springframework.stereotype.Repository;
@@ -14,7 +14,7 @@ public class JpaTransferPersistence implements TransferPersistence {
     }
 
     @Override
-    public void save(Transfer transfer) {
-        jpaTransferRepository.save(transfer);
+    public void save(TransferEntity transferEntity) {
+        jpaTransferRepository.save(transferEntity);
     }
 }

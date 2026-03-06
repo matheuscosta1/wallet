@@ -1,11 +1,14 @@
 package br.com.wallet.project.mapper;
 
 import br.com.wallet.project.controller.response.TransactionHistoryResponse;
-import br.com.wallet.project.domain.model.Transaction;
+import br.com.wallet.project.domain.dto.TransactionDTO;
 import br.com.wallet.project.util.MoneyUtil;
 
 public class TransactionHistoryMapper {
-    public static TransactionHistoryResponse mapToTransactionHistoryResponse(Transaction transaction) {
+
+    private TransactionHistoryMapper() {}
+
+    public static TransactionHistoryResponse mapToTransactionHistoryResponse(TransactionDTO transaction) {
         return TransactionHistoryResponse.builder()
                 .userId(transaction.getWallet().getUserId())
                 .transactionId(transaction.getTransactionTrackId())

@@ -4,10 +4,10 @@ import br.com.wallet.project.controller.request.HistoryTransactionRequest;
 import br.com.wallet.project.controller.request.WalletRequest;
 import br.com.wallet.project.controller.response.TransactionHistoryResponse;
 import br.com.wallet.project.controller.response.WalletResponse;
+import br.com.wallet.project.domain.dto.TransactionDTO;
+import br.com.wallet.project.domain.dto.WalletDTO;
 import br.com.wallet.project.infrastructure.persistence.TransactionPersistence;
 import br.com.wallet.project.infrastructure.persistence.WalletPersistence;
-import br.com.wallet.project.domain.model.Transaction;
-import br.com.wallet.project.domain.model.Wallet;
 import br.com.wallet.project.domain.service.TransactionProcessorService;
 import br.com.wallet.project.domain.service.WalletService;
 import br.com.wallet.project.exception.WalletException;
@@ -27,7 +27,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class WalletServiceTest {
+class WalletEntityServiceTest {
     @Mock
     WalletPersistence walletPersistence;
     @Mock
@@ -74,7 +74,7 @@ class WalletServiceTest {
     @Test
     void testValidateWallet() {
         when(walletPersistence.findByUserId(anyString())).thenReturn(buildWalletEntity());
-        Wallet result = walletService.validateWallet("userId");
+        WalletDTO result = walletService.validateWallet("userId");
         assertEquals("userId", result.getUserId());
         assertEquals(BigDecimal.TEN, result.getBalance());
     }
@@ -88,7 +88,7 @@ class WalletServiceTest {
     @Test
     void testValidateWallet2() {
         when(walletPersistence.findByUserId(anyString())).thenReturn(buildWalletEntity());
-        Wallet result = walletService.validateWallet("userId", UUID.randomUUID());
+        WalletDTO result = walletService.validateWallet("userId", UUID.randomUUID());
         assertEquals("userId", result.getUserId());
         assertEquals(BigDecimal.TEN, result.getBalance());
     }
@@ -103,8 +103,8 @@ class WalletServiceTest {
         return new WalletRequest(userId);
     }
 
-    private static Wallet buildWalletEntity() {
-        return Wallet
+    private static WalletDTO buildWalletEntity() {
+        return WalletDTO
                 .builder()
                 .userId("userId")
                 .balance(BigDecimal.TEN)
@@ -113,8 +113,8 @@ class WalletServiceTest {
                 .build();
     }
 
-    private static Transaction buildTransactionEntity() {
-        return Transaction
+    private static TransactionDTO buildTransactionEntity() {
+        return TransactionDTO
                 .builder()
                 .timestamp(LocalDateTime.now())
                 .wallet(buildWalletEntity())
