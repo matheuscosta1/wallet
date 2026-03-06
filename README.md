@@ -33,41 +33,41 @@ $ mvn clean install
 
 ## API Documentation
 
-- Swagger url is available at http://localhost:8080/walletEntity/swagger-ui/index.html after the service is up
+- Swagger url is available at http://localhost:8080/wallet/swagger-ui/index.html after the service is up
 - There is also a Postman collection located at ```collections/Wallet.postman_collection.json```
 
 ## Design Choices
 
 This project was written in Java with Spring Boot, PostgreSQL for database and Kafka to process asynchronous transactions.
-I delivered six endpoints to make some walletEntity operations: create walletEntity, retrieve walletEntity balance, deposit money, withdraw money, transferEntity money from an account to another and get transactionEntity information by a specific date in the past.
+I delivered six endpoints to make some wallet operations: create wallet, retrieve wallet balance, deposit money, withdraw money, transfer money from an account to another and get transaction information by a specific date in the past.
 
 Basically, I initially created all the database design and divided into three entities: Wallet, Transaction and Transfer.
-With the Wallet entity I can create my walletEntity and retrieve walletEntity balance.
+With the Wallet entity I can create my wallet and retrieve wallet balance.
 
-The Transaction entity was needed for deposit, withdraw and transferEntity money and transactionEntity history, so when I need to get a transactionEntity history I can filter by date and the walletEntity user id; and I save beforeBalance and afterBalance for any transactionEntity.
+The Transaction entity was needed for deposit, withdraw and transfer money and transaction history, so when I need to get a transaction history I can filter by date and the wallet user id; and I save beforeBalance and afterBalance for any transaction.
 
-Transfer entity exists to save relation with deposit money transactionEntity and withdraw money transactionEntity, so I can keep the transferEntity history in case I need to track it in the future.
+Transfer entity exists to save relation with deposit money transaction and withdraw money transaction, so I can keep the transfer history in case I need to track it in the future.
 
 Following is the system database diagram:
 
-![walletEntity-system-database-diagram.png](walletEntity-system-database-diagram.png)
+![wallet-system-database-diagram.png](wallet-system-database-diagram.png)
 
 To treat concurrency I added a field called version into Wallet entity and in any consult into database I use pessimist lock to avoid concurrent instances.
 
-Furthermore, when I create deposit, withdraw and transferEntity money it returns to the user a transactionEntity id and the process occurs asynchronous. This way
+Furthermore, when I create deposit, withdraw and transfer money it returns to the user a transaction id and the process occurs asynchronous. This way
 
 I can guarantee that transactions will be performed in order. I also can scale my system based on the demand. My system with Kafka is also resilient and failure tolerant.
 
-If an error occurs during a transactionEntity the message will be keeped in the topic and will be processed later (I am commiting messages only after all process - manually).
+If an error occurs during a transaction the message will be keeped in the topic and will be processed later (I am commiting messages only after all process - manually).
 
-My Kafka is FIFO type, first in first out, so in a bank system I can guarantee that operations will be performed without one transactionEntity affecting another one. And when I produce a message to Kafka topic I configured transactions to ensure that only one message will be posted.
+My Kafka is FIFO type, first in first out, so in a bank system I can guarantee that operations will be performed without one transaction affecting another one. And when I produce a message to Kafka topic I configured transactions to ensure that only one message will be posted.
 
 Still talking about Kafka, I'm handling failure messages using Kafka Retryable, configuring how many times I want to retry an operation and if it still keep failing, I can send a message to a dead letter queue (dlt).
 
 As Design of the application, and with the short time to develop, I chose to create services that are called from controller, in a simple way. But to keep the code more readable I used a Factory and Strategy Design Patterns to organize my code.
 
 I also treated exceptions during the process and log all of them.
-And during system operations I still logged relevant information as transactionEntity id and user id, this way with an error in production for example I can troubleshoot easily.
+And during system operations I still logged relevant information as transaction id and user id, this way with an error in production for example I can troubleshoot easily.
 
 Unit tests and functional tests with test container were made to maintain code safer.
 
