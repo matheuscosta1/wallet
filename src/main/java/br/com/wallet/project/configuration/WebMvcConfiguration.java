@@ -8,9 +8,8 @@ import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
 @Configuration
 public class WebMvcConfiguration {
-
-  @Bean
-  public ObjectMapper objectMapper(Jackson2ObjectMapperBuilder mapperBuilder) {
-    return mapperBuilder.build().setSerializationInclusion(JsonInclude.Include.NON_NULL);
-  }
+    @Bean
+    public ObjectMapper objectMapper(Jackson2ObjectMapperBuilder mapperBuilder) {
+        return mapperBuilder.build().setSerializationInclusion(JsonInclude.Include.NON_NULL);
+    }
 }

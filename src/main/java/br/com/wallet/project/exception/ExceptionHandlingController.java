@@ -1,5 +1,6 @@
 package br.com.wallet.project.exception;
 
+import br.com.wallet.project.domain.exception.GatewayException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
