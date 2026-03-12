@@ -1,0 +1,33 @@
+package br.com.wallet.project.adapter.out.persistence.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Entity
+@Builder
+@Getter
+@Setter
+@Table(name = "wallets")
+@NoArgsConstructor
+@AllArgsConstructor
+public class WalletEntity {
+    
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String userId;
+
+    @Column(nullable = false, scale = 2)
+    private BigDecimal balance;
+
+    @Version
+    private Long version;
+    
+    @OneToMany(mappedBy = "walletEntity", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<TransactionEntity> transactionEntities;
+}
