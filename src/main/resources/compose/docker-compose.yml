@@ -27,7 +27,7 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
-      KAFKA_CREATE_TOPICS: "wallet-transactions:1:1"
+      KAFKA_CREATE_TOPICS: "wallet-transactions:3:1"
     networks:
       - kafka-net
   redis:
