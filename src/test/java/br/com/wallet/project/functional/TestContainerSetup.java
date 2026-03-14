@@ -1,18 +1,38 @@
 package br.com.wallet.project.functional;
 
-import org.testcontainers.containers.DockerComposeContainer;
-import org.testcontainers.containers.wait.strategy.Wait;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import java.io.IOException;
+import java.net.Socket;
 
-import java.io.File;
-
-@Testcontainers
+/**
+ * Utilitário que verifica se os serviços de infraestrutura já estão
+ * acessíveis localmente (Docker Engine do desenvolvedor).
+ *
+ * <p>Não possui mais a responsabilidade de subir containers — isso foi
+ * delegado ao {@link ContainerManager}, que decide a estratégia em
+ * tempo de inicialização dos testes.
+ */
 public interface TestContainerSetup {
-    @Container
-    DockerComposeContainer<?> container = new DockerComposeContainer<>(
-            new File("src/main/resources/compose/docker-compose.yml"))
-            .withExposedService("kafka_1", 9092, Wait.forListeningPort())
-            .withExposedService("postgres_1", 5432, Wait.forListeningPort())
-            .withExposedService("zookeeper_1", 2181, Wait.forListeningPort());
+
+    /**
+     * Tenta abrir uma conexão TCP em {@code host:port}.
+     *
+     * @return {@code true} se o serviço estiver acessível
+     */
+    static boolean isReachable(String host, int port) {
+        try (Socket s = new Socket(host, port)) {
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Retorna {@code true} se Postgres (:5432), Kafka (:9092) e
+     * Zookeeper (:2181) estiverem todos acessíveis em localhost.
+     */
+    static boolean isLocalDockerRunning() {
+        return isReachable("localhost", 5432)
+            && isReachable("localhost", 9092)
+            && isReachable("localhost", 2181);
+    }
 }

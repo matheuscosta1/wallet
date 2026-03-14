@@ -1,14 +1,29 @@
 package br.com.wallet.project.functional;
 
+import br.com.wallet.project.adapter.out.messaging.kafka.producer.KafkaTransactionEventPublisher;
+import br.com.wallet.project.domain.model.TransactionMessage;
+import br.com.wallet.project.domain.model.enums.TransactionType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.MediaType;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -29,6 +44,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @DisplayName("Kafka Resilience & Message Ordering")
 class KafkaResilienceFunctionalTest extends BaseFunctionalTest {
+
+    @Autowired
+    private KafkaTransactionEventPublisher kafkaTransactionEventPublisher;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -248,5 +266,69 @@ class KafkaResilienceFunctionalTest extends BaseFunctionalTest {
         BigDecimal balance = jdbcTemplate.queryForObject(
                 "SELECT balance FROM wallets WHERE user_id = 'user-k05'", BigDecimal.class);
         assertThat(balance).isEqualByComparingTo("75.00");
+    }
+
+    @Test
+    @DisplayName("K-06: Force out-of-order by publishing directly to specific partitions")
+    void shouldExposeOrderingProblemWithoutPartitionKey() throws Exception {
+        createWallet("user-k06");
+
+        // Create a non-transactional KafkaTemplate to bypass transaction requirement
+
+        UUID withdrawId  = UUID.randomUUID();
+        UUID depositId1  = UUID.randomUUID();
+        UUID depositId2  = UUID.randomUUID();
+        UUID withdrawId2 = UUID.randomUUID();
+
+        TransactionMessage withdraw1 = TransactionMessage.builder()
+                .transactionId(withdrawId)
+                .idempotencyId(UUID.randomUUID())
+                .userId("user-k06")
+                .amount(new BigDecimal("30.00"))
+                .type(TransactionType.WITHDRAW)
+                .build();
+
+        TransactionMessage deposit1 = TransactionMessage.builder()
+                .transactionId(depositId1)
+                .idempotencyId(UUID.randomUUID())
+                .userId("user-k06")
+                .amount(new BigDecimal("100.00"))
+                .type(TransactionType.DEPOSIT)
+                .build();
+
+        TransactionMessage deposit2 = TransactionMessage.builder()
+                .transactionId(depositId2)
+                .idempotencyId(UUID.randomUUID())
+                .userId("user-k06")
+                .amount(new BigDecimal("50.00"))
+                .type(TransactionType.DEPOSIT)
+                .build();
+
+        TransactionMessage withdraw2 = TransactionMessage.builder()
+                .transactionId(withdrawId2)
+                .idempotencyId(UUID.randomUUID())
+                .userId("user-k06")
+                .amount(new BigDecimal("20.00"))
+                .type(TransactionType.WITHDRAW)
+                .build();
+
+        // Force wrong order: withdraw BEFORE deposit on different partitions
+        kafkaTransactionEventPublisher.publish(withdraw1);
+        kafkaTransactionEventPublisher.publish(deposit1);
+        kafkaTransactionEventPublisher.publish(deposit2);
+        kafkaTransactionEventPublisher.publish(withdraw2);
+
+        // withdraw1 (-30) on partition 1 processed before deposit1 (+100) on partition 0
+        // insufficient funds → DLQ → fewer than 4 transactions committed
+        // waitForCondition will TIMEOUT proving the ordering problem
+        waitForCondition(
+                "SELECT COUNT(*) FROM transactions WHERE wallet_id = " +
+                        "(SELECT id FROM wallets WHERE user_id = 'user-k06')",
+                4, ASYNC_TIMEOUT_MS);
+
+        BigDecimal balance = jdbcTemplate.queryForObject(
+                "SELECT balance FROM wallets WHERE user_id = 'user-k06'", BigDecimal.class);
+
+        assertThat(balance).isEqualByComparingTo("100.00");
     }
 }
