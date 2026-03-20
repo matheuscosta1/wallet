@@ -40,6 +40,7 @@ public abstract class BaseFunctionalTest {
         jdbcTemplate.execute("DELETE FROM transfers");
         jdbcTemplate.execute("DELETE FROM transactions");
         jdbcTemplate.execute("DELETE FROM wallets");
+        jdbcTemplate.execute("DELETE FROM wallet_events");
     }
 
     @BeforeEach

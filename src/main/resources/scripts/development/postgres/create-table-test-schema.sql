@@ -28,3 +28,28 @@ CREATE TABLE transfers (
     CONSTRAINT fk_transfers_debit_transaction FOREIGN KEY (debit_transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
     CONSTRAINT fk_transfers_credit_transaction FOREIGN KEY (credit_transaction_id) REFERENCES transactions(id) ON DELETE CASCADE
 );
+
+
+-- Event Sourcing: append-only table that records every domain event in the wallet system.
+-- This table is the source of truth; wallets/transactions tables become read-model projections.
+
+CREATE TABLE wallet_events (
+                               id               BIGSERIAL    PRIMARY KEY,
+                               event_id         UUID         NOT NULL UNIQUE,          -- idempotency / dedup key
+                               aggregate_id     VARCHAR(255) NOT NULL,                 -- userId (or fromUserId for TRANSFER)
+                               aggregate_type   VARCHAR(50)  NOT NULL DEFAULT 'WALLET',
+                               event_type       VARCHAR(50)  NOT NULL,                 -- WALLET_CREATED | DEPOSIT_REQUESTED | DEPOSIT_COMPLETED | WITHDRAW_REQUESTED | WITHDRAW_COMPLETED | TRANSFER_REQUESTED | TRANSFER_COMPLETED | TRANSFER_FAILED | IDEMPOTENCY_DUPLICATE_DETECTED
+                               event_version    INTEGER      NOT NULL DEFAULT 1,
+                               payload          JSONB        NOT NULL,
+                               metadata         JSONB,                                 -- partition, offset, threadName, idempotencyId…
+                               correlation_id   UUID,                                  -- ties request → kafka msg → processing
+                               causation_id     UUID,                                  -- event that caused this event
+                               occurred_at      TIMESTAMP    NOT NULL DEFAULT NOW(),
+                               created_at       TIMESTAMP    NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_wallet_events_aggregate_id   ON wallet_events (aggregate_id);
+CREATE INDEX idx_wallet_events_event_type     ON wallet_events (event_type);
+CREATE INDEX idx_wallet_events_occurred_at    ON wallet_events (occurred_at);
+CREATE INDEX idx_wallet_events_correlation_id ON wallet_events (correlation_id);
+CREATE INDEX idx_wallet_events_event_id       ON wallet_events (event_id);
