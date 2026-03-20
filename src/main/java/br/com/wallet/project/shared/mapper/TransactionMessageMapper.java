@@ -6,8 +6,13 @@ public class TransactionMessageMapper {
     private TransactionMessageMapper() {}
     public static TransactionMessage toMessage(TransactionCommand command, UUID idempotencyId) {
         return TransactionMessage.builder()
-            .transactionId(UUID.randomUUID()).idempotencyId(idempotencyId)
-            .userId(command.getUserId()).fromUserId(command.getFromUserWalletId())
-            .toUserId(command.getToUserWalletId()).amount(command.getAmount()).type(command.getTransactionType()).build();
+            .transactionId(UUID.randomUUID())
+            .idempotencyId(idempotencyId)
+            .userId(command.getUserId())
+            .fromUserId(command.getFromUserWalletId())
+            .toUserId(command.getToUserWalletId())
+            .amount(command.getAmount())
+            .type(command.getTransactionType())
+            .build();
     }
 }

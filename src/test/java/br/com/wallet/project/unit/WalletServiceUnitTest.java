@@ -5,8 +5,10 @@ import br.com.wallet.project.adapter.in.web.request.WalletRequest;
 import br.com.wallet.project.adapter.in.web.response.TransactionHistoryResponse;
 import br.com.wallet.project.adapter.in.web.response.WalletResponse;
 import br.com.wallet.project.application.port.out.TransactionRepository;
+import br.com.wallet.project.application.port.out.WalletEventRepository;
 import br.com.wallet.project.application.port.out.WalletRepository;
 import br.com.wallet.project.application.service.WalletService;
+import br.com.wallet.project.domain.event.WalletEvent;
 import br.com.wallet.project.domain.exception.WalletDomainException;
 import br.com.wallet.project.domain.model.Transaction;
 import br.com.wallet.project.domain.model.Wallet;
@@ -30,6 +32,7 @@ class WalletServiceUnitTest {
 
     @Mock WalletRepository walletRepository;
     @Mock TransactionRepository transactionRepository;
+    @Mock WalletEventRepository walletEventRepository;
     @InjectMocks WalletService walletService;
 
     @BeforeEach
@@ -38,6 +41,7 @@ class WalletServiceUnitTest {
     @Test
     void testCreateWallet() {
         when(walletRepository.findByUserId(anyString())).thenReturn(null);
+        when(walletEventRepository.save(any())).thenReturn(new WalletEvent());
         WalletResponse result = walletService.createWallet(new WalletRequest("userId"));
         assertNotNull(result);
         assertEquals("userId", result.getUserId());
