@@ -1,71 +1,67 @@
-#language: pt
-Feature: Histórico de Transações e Endpoint Genérico
-  Como usuário do sistema
-  Quero consultar meu histórico de transações e usar o endpoint genérico de operações
-  Para ter visibilidade das movimentações na minha carteira
+Feature: Transaction History and Generic Operation
 
   Background:
-    Given que o sistema está disponível
+    Given the system is available
 
-  Scenario: H-01 - Histórico após depósito, saque e transferência retorna 3 transações
-    Given que existe uma carteira para o usuário "user-h01-a"
-    And que existe uma carteira para o usuário "user-h01-b"
-    And o usuário "user-h01-a" tem saldo de "200.00"
-    And o usuário "user-h01-a" realizou um saque de "50.00"
-    And o usuário "user-h01-a" realizou uma transferência de "30.00" para "user-h01-b"
-    When eu consulto o histórico do usuário "user-h01-a" para a data de hoje
-    Then a resposta deve conter uma lista com 3 transações
+  Scenario: H-01 - History after deposit withdraw and transfer returns 3 transactions
+    Given a wallet exists for user "user-h01-a"
+    And a wallet exists for user "user-h01-b"
+    And user "user-h01-a" has a balance of "200.00"
+    And user "user-h01-a" made a withdraw of "50.00"
+    And user "user-h01-a" made a transfer of "30.00" to "user-h01-b"
+    When I retrieve the history for user "user-h01-a" for today
+    Then the response should contain a list with 3 transactions
 
-  Scenario: H-02 - Histórico filtrado pela data de hoje retorna apenas transações do dia
-    Given que existe uma carteira para o usuário "user-h02"
-    And o usuário "user-h02" tem saldo de "100.00"
-    When eu consulto o histórico do usuário "user-h02" para a data de hoje
-    Then a resposta deve conter uma lista com 1 transação
+  Scenario: H-02 - History filtered by today returns only todays transactions
+    Given a wallet exists for user "user-h02"
+    And user "user-h02" has a balance of "100.00"
+    When I retrieve the history for user "user-h02" for today
+    Then the response should contain a list with 1 transaction
 
-  Scenario: H-03 - Histórico para usuário inexistente retorna 4xx
-    When eu consulto o histórico do usuário "ghost-user-h03" para a data de hoje
-    Then a resposta deve retornar status 4xx
+  Scenario: H-03 - History for non-existent user returns 4xx
+    When I retrieve the history for user "ghost-user-h03" for today
+    Then the response should return status 4xx
 
-  Scenario: H-04 - Histórico para usuário sem transações retorna lista vazia
-    Given que existe uma carteira para o usuário "user-h04"
-    When eu consulto o histórico do usuário "user-h04" para a data de hoje
-    Then a resposta deve conter uma lista vazia
+  Scenario: H-04 - History for user with no transactions returns empty list
+    Given a wallet exists for user "user-h04"
+    When I retrieve the history for user "user-h04" for today
+    Then the response should contain an empty list
 
-  Scenario: H-05 - Histórico com data futura retorna lista vazia
-    Given que existe uma carteira para o usuário "user-h05"
-    And o usuário "user-h05" tem saldo de "100.00"
-    When eu consulto o histórico do usuário "user-h05" para a data "2099-12-31 00:00:00.000"
-    Then a resposta deve conter uma lista vazia
+  Scenario: H-05 - History with future date returns empty list
+    Given a wallet exists for user "user-h05"
+    And user "user-h05" has a balance of "100.00"
+    When I retrieve the history for user "user-h05" for date "2099-12-31 00:00:00.000"
+    Then the response should contain an empty list
 
-  Scenario: H-06 - Cada transação no histórico contém saldo antes e depois
-    Given que existe uma carteira para o usuário "user-h06"
-    And o usuário "user-h06" tem saldo de "100.00"
-    When eu consulto o histórico do usuário "user-h06" para a data de hoje
-    Then a primeira transação deve conter balanceBeforeTransaction igual a "0.0"
-    And a primeira transação deve conter balanceAfterTransaction igual a "100.0"
+  Scenario: H-06 - Every transaction in history contains balance before and after
+    Given a wallet exists for user "user-h06"
+    And user "user-h06" has a balance of "100.00"
+    When I retrieve the history for user "user-h06" for today
+    Then the first transaction should have balanceBeforeTransaction equal to "0.0"
+    And the first transaction should have balanceAfterTransaction equal to "100.0"
 
-  Scenario: G-01 - Endpoint genérico com tipo DEPOSIT processa corretamente
-    Given que existe uma carteira para o usuário "user-g01"
-    When eu realizo uma operação genérica do tipo "DEPOSIT" de "80.00" para o usuário "user-g01"
-    Then deve existir 1 transação do tipo "DEPOSIT" para o usuário "user-g01" em até 10 segundos
-    And o saldo da carteira de "user-g01" deve ser "80.00"
+  Scenario: G-01 - Generic endpoint with type DEPOSIT processes correctly
+    Given a wallet exists for user "user-g01"
+    When I perform a generic operation of type "DEPOSIT" with amount "80.00" for user "user-g01"
+    Then there should be 1 transaction of type "DEPOSIT" for user "user-g01" within 10 seconds
+    And the balance of "user-g01" should be "80.00"
 
-  Scenario: G-02 - Endpoint genérico com tipo WITHDRAW processa corretamente
-    Given que existe uma carteira para o usuário "user-g02"
-    And o usuário "user-g02" tem saldo de "100.00"
-    When eu realizo uma operação genérica do tipo "WITHDRAW" de "25.00" para o usuário "user-g02"
-    Then deve existir 1 transação do tipo "WITHDRAW" para o usuário "user-g02" em até 10 segundos
-    And o saldo da carteira de "user-g02" deve ser "75.00"
+  Scenario: G-02 - Generic endpoint with type WITHDRAW processes correctly
+    Given a wallet exists for user "user-g02"
+    And user "user-g02" has a balance of "100.00"
+    When I perform a generic operation of type "WITHDRAW" with amount "25.00" for user "user-g02"
+    Then there should be 1 transaction of type "WITHDRAW" for user "user-g02" within 10 seconds
+    And the balance of "user-g02" should be "75.00"
 
-  Scenario: G-03 - Endpoint genérico com tipo TRANSFER processa corretamente
-    Given que existe uma carteira para o usuário "user-g03-a"
-    And que existe uma carteira para o usuário "user-g03-b"
-    And o usuário "user-g03-a" tem saldo de "100.00"
-    When eu realizo uma operação genérica de transferência de "35.00" de "user-g03-a" para "user-g03-b"
-    Then deve existir 1 registro de transferência no banco em até 10 segundos
-    And o saldo da carteira de "user-g03-a" deve ser "65.00"
+  Scenario: G-03 - Generic endpoint with type TRANSFER processes correctly
+    Given a wallet exists for user "user-g03-a"
+    And a wallet exists for user "user-g03-b"
+    And user "user-g03-a" has a balance of "100.00"
+    When I perform a generic transfer of "35.00" from "user-g03-a" to "user-g03-b"
+    Then there should be 1 transfer record in the database within 10 seconds
+    And the balance of "user-g03-a" should be "65.00"
 
-  Scenario: G-04 - Endpoint genérico com tipo desconhecido retorna 400
-    Given que existe uma carteira para o usuário "user-g04"
-    When eu realizo uma operação genérica do tipo "INVALID_TYPE" de "50.00" para o usuário "user-g04"
-    Then a resposta deve retornar status 400
+  Scenario: G-04 - Generic endpoint with unknown type returns 400
+    Given a wallet exists for user "user-g04"
+    When I perform a generic operation of type "INVALID_TYPE" with amount "50.00" for user "user-g04"
+    Then the response should return status 400

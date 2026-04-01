@@ -1,15 +1,17 @@
 package br.com.wallet.project.functional.cucumber.runner;
 
-import io.cucumber.junit.platform.engine.Cucumber;
+import io.cucumber.junit.platform.engine.Constants;
+import org.junit.platform.suite.api.ConfigurationParameter;
+import org.junit.platform.suite.api.IncludeEngines;
+import org.junit.platform.suite.api.SelectClasspathResource;
+import org.junit.platform.suite.api.Suite;
 
-/**
- * Ponto de entrada do Cucumber para o JUnit Platform.
- *
- * Usa @Cucumber (do cucumber-junit-platform-engine) em vez de @Suite +
- * @IncludeEngines, evitando a dependência junit-platform-suite.
- *
- * As configurações de glue e plugin são lidas de
- * src/test/resources/cucumber.properties.
- */
-@Cucumber
+@Suite
+@IncludeEngines("cucumber")
+@SelectClasspathResource("features")
+@ConfigurationParameter(
+        key = Constants.GLUE_PROPERTY_NAME,
+        value = "br.com.wallet.project.functional.cucumber.steps," +
+                "br.com.wallet.project.functional.cucumber.support"
+)
 public class CucumberTest {}

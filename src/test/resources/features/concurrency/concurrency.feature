@@ -1,56 +1,52 @@
-#language: pt
-Feature: Controle de Concorrência - Pessimistic Lock e @Version
-  Como sistema de carteira
-  Quero garantir que operações concorrentes não gerem inconsistências de saldo
-  Para que o sistema seja financeiramente confiável
+Feature: Concurrency Control - Pessimistic Lock and Version
 
   Background:
-    Given que o sistema está disponível
+    Given the system is available
 
-  Scenario: C-01 - 10 depósitos concorrentes de 10.00 resultam em saldo exato de 100.00
-    Given que existe uma carteira para o usuário "user-c01"
-    When 10 threads enviam simultaneamente depósitos de "10.00" para "user-c01"
-    Then deve existir 10 transações do tipo "DEPOSIT" para o usuário "user-c01" em até 30 segundos
-    And o saldo da carteira de "user-c01" deve ser "100.00"
+  Scenario: C-01 - 10 concurrent deposits of 10.00 result in exact balance of 100.00
+    Given a wallet exists for user "user-c01"
+    When 10 threads concurrently send deposits of "10.00" for "user-c01"
+    Then there should be 10 transactions of type "DEPOSIT" for user "user-c01" within 30 seconds
+    And the balance of "user-c01" should be "100.00"
 
-  Scenario: C-02 - 10 saques concorrentes de 10.00 a partir de 100.00 resultam em saldo 0.00 sem overdraft
-    Given que existe uma carteira para o usuário "user-c02"
-    And o usuário "user-c02" tem saldo de "100.00"
-    When 10 threads enviam simultaneamente saques de "10.00" para "user-c02"
-    Then deve existir 10 transações do tipo "WITHDRAW" para o usuário "user-c02" em até 30 segundos
-    And o saldo da carteira de "user-c02" deve ser "0.00"
-    And o saldo da carteira de "user-c02" deve ser maior ou igual a "0.00"
+  Scenario: C-02 - 10 concurrent withdraws of 10.00 from 100.00 result in 0.00 without overdraft
+    Given a wallet exists for user "user-c02"
+    And user "user-c02" has a balance of "100.00"
+    When 10 threads concurrently send withdraws of "10.00" for "user-c02"
+    Then there should be 10 transactions of type "WITHDRAW" for user "user-c02" within 30 seconds
+    And the balance of "user-c02" should be "0.00"
+    And the balance of "user-c02" should be greater than or equal to "0.00"
 
-  Scenario: C-03 - 5 depósitos e 5 saques concorrentes resultam em saldo consistente de 150.00
-    Given que existe uma carteira para o usuário "user-c03"
-    And o usuário "user-c03" tem saldo de "100.00"
-    When 5 threads enviam depósitos de "20.00" e 5 threads enviam saques de "10.00" concorrentemente para "user-c03"
-    Then deve existir 11 transações para o usuário "user-c03" em até 30 segundos
-    And o saldo da carteira de "user-c03" deve ser "150.00"
+  Scenario: C-03 - 5 concurrent deposits and 5 withdraws result in consistent balance of 150.00
+    Given a wallet exists for user "user-c03"
+    And user "user-c03" has a balance of "100.00"
+    When 5 threads send deposits of "20.00" and 5 threads send withdraws of "10.00" concurrently for "user-c03"
+    Then there should be 11 transactions for user "user-c03" within 30 seconds
+    And the balance of "user-c03" should be "150.00"
 
-  Scenario: C-04 - 5 transferências concorrentes de A para B preservam a soma total
-    Given que existe uma carteira para o usuário "user-c04-a"
-    And que existe uma carteira para o usuário "user-c04-b"
-    And o usuário "user-c04-a" tem saldo de "100.00"
-    When 5 threads enviam simultaneamente transferências de "10.00" de "user-c04-a" para "user-c04-b"
-    Then deve existir 5 registros de transferência no banco em até 30 segundos
-    And a soma dos saldos de "user-c04-a" e "user-c04-b" deve ser "100.00"
-    And o saldo da carteira de "user-c04-a" deve ser "50.00"
-    And o saldo da carteira de "user-c04-b" deve ser "50.00"
+  Scenario: C-04 - 5 concurrent transfers from A to B preserve total sum
+    Given a wallet exists for user "user-c04-a"
+    And a wallet exists for user "user-c04-b"
+    And user "user-c04-a" has a balance of "100.00"
+    When 5 threads concurrently send transfers of "10.00" from "user-c04-a" to "user-c04-b"
+    Then there should be 5 transfer records in the database within 30 seconds
+    And the sum of balances of "user-c04-a" and "user-c04-b" should be "100.00"
+    And the balance of "user-c04-a" should be "50.00"
+    And the balance of "user-c04-b" should be "50.00"
 
-  Scenario: C-05 - 5 transferências A->B e 5 B->A concorrentes sem deadlock preservam a soma
-    Given que existe uma carteira para o usuário "user-c05-a"
-    And que existe uma carteira para o usuário "user-c05-b"
-    And o usuário "user-c05-a" tem saldo de "50.00"
-    And o usuário "user-c05-b" tem saldo de "50.00"
-    When 5 threads transferem "5.00" de "user-c05-a" para "user-c05-b" e 5 threads transferem "5.00" de "user-c05-b" para "user-c05-a" concorrentemente
-    Then deve existir 10 registros de transferência no banco em até 30 segundos
-    And a soma dos saldos de "user-c05-a" e "user-c05-b" deve ser "100.00"
-    And o saldo da carteira de "user-c05-a" deve ser maior ou igual a "0.00"
-    And o saldo da carteira de "user-c05-b" deve ser maior ou igual a "0.00"
+  Scenario: C-05 - 5 A to B and 5 B to A concurrent transfers without deadlock preserve total
+    Given a wallet exists for user "user-c05-a"
+    And a wallet exists for user "user-c05-b"
+    And user "user-c05-a" has a balance of "50.00"
+    And user "user-c05-b" has a balance of "50.00"
+    When 5 threads transfer "5.00" from "user-c05-a" to "user-c05-b" and 5 threads transfer "5.00" from "user-c05-b" to "user-c05-a" concurrently
+    Then there should be 10 transfer records in the database within 30 seconds
+    And the sum of balances of "user-c05-a" and "user-c05-b" should be "100.00"
+    And the balance of "user-c05-a" should be greater than or equal to "0.00"
+    And the balance of "user-c05-b" should be greater than or equal to "0.00"
 
-  Scenario: C-06 - Stress test: 100 depósitos concorrentes de 1.00 resultam em saldo exato de 100.00
-    Given que existe uma carteira para o usuário "user-c06"
-    When 100 threads enviam simultaneamente depósitos de "1.00" para "user-c06"
-    Then deve existir 100 transações do tipo "DEPOSIT" para o usuário "user-c06" em até 30 segundos
-    And o saldo da carteira de "user-c06" deve ser "100.00"
+  Scenario: C-06 - Stress test 100 concurrent deposits of 1.00 result in exact balance of 100.00
+    Given a wallet exists for user "user-c06"
+    When 100 threads concurrently send deposits of "1.00" for "user-c06"
+    Then there should be 100 transactions of type "DEPOSIT" for user "user-c06" within 30 seconds
+    And the balance of "user-c06" should be "100.00"
