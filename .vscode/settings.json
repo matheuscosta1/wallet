@@ -1,0 +1,16 @@
+{
+  "java.test.defaultConfig": "maven",
+  "[java]": {
+    "editor.defaultFormatter": "redhat.java"
+  },
+  "java.project.referencedLibraries": [
+    "lib/**/*.jar"
+  ],
+  "java.debug.settings.enableHotCodeReplace": "onFilesSave",
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "java.saveActions.organizeImports": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+},
+"java.compile.nullAnalysis.mode": "automatic"
+}

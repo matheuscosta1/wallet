@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Spring Boot App (Wallet Service)",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "br.com.wallet.project.WalletApplication",
+      "projectName": "wallet",
+      "args": "",
+      "preLaunchTask": "Maven: Build Project"
+    }
+  ]
+}
