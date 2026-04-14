@@ -35,6 +35,7 @@ import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import io.cucumber.java.Before;
 
 public class WalletStepDefinitions {
 
@@ -48,6 +49,20 @@ public class WalletStepDefinitions {
     private String reusableIdempotencyId;
     private String capturedTransferAggregateId;
 
+
+    @Before
+    public void cleanDatabase() {
+        jdbcTemplate.execute("DELETE FROM transfers");
+        jdbcTemplate.execute("DELETE FROM transactions");
+        jdbcTemplate.execute("DELETE FROM wallet_cdi");
+        jdbcTemplate.execute("DELETE FROM wallet_events");
+        jdbcTemplate.execute("DELETE FROM wallets");
+
+        Set<String> keys = redisTemplate.keys("*");
+        if (keys != null && !keys.isEmpty()) {
+            redisTemplate.delete(keys);
+        }
+    }
     private static final long DEFAULT_TIMEOUT_MS = 10_000;
 
     // ── System ────────────────────────────────────────────────────────────────

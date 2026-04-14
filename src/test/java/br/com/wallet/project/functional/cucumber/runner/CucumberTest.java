@@ -14,4 +14,11 @@ import org.junit.platform.suite.api.Suite;
         value = "br.com.wallet.project.functional.cucumber.steps," +
                 "br.com.wallet.project.functional.cucumber.support"
 )
+@ConfigurationParameter(
+        key = Constants.PLUGIN_PROPERTY_NAME,
+        value = "pretty," +
+                "html:target/cucumber-html-report," +
+                "json:target/cucumber.json," +
+                "io.qameta.allure.cucumber7jvm.AllureCucumber7Jvm"
+)
 public class CucumberTest {}

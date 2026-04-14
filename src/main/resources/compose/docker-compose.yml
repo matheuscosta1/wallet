@@ -1,4 +1,4 @@
-version: '3'
+version: '3.3'
 services:
   postgres:
     image: postgres
@@ -10,12 +10,14 @@ services:
       POSTGRES_DB: "wallet"
     ports:
       - "5432:5432"
+
   zookeeper:
     image: wurstmeister/zookeeper
     ports:
       - "2181:2181"
     networks:
       - kafka-net
+
   kafka:
     image: wurstmeister/kafka
     ports:
@@ -30,10 +32,27 @@ services:
       KAFKA_CREATE_TOPICS: "wallet-transactions:3:1"
     networks:
       - kafka-net
+
   redis:
     image: redis
     ports:
       - "6379:6379"
+
+  allure:
+    image: frankescobar/allure-docker-service
+    user: root
+    environment:
+      CHECK_RESULTS_EVERY_SECONDS: 5
+      KEEP_HISTORY: 1
+      KEEP_HISTORY_LATEST: 10
+    ports:
+      - "5050:5050"
+    volumes:
+      - ../../../target/allure-results:/app/allure-results
+      - ../../../target/allure-reports:/app/default-reports
+    networks:
+      - kafka-net
+
 networks:
   kafka-net:
     driver: bridge
