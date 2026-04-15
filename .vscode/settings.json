@@ -3,6 +3,14 @@
   "[java]": {
     "editor.defaultFormatter": "redhat.java"
   },
+  "files.associations": {
+    "*.feature": "cucumber"
+  },
+  "cucumberautocomplete.enableTestAdapter": true,
+  "cucumberautocomplete.steps": [
+    "src/test/java/**/*.java"
+  ],
+  "cucumberautocomplete.syncfeatures": "src/test/resources/features/**/*.feature",
   "java.project.referencedLibraries": [
     "lib/**/*.jar"
   ],
@@ -11,6 +19,6 @@
   "java.saveActions.organizeImports": true,
   "editor.codeActionsOnSave": {
     "source.organizeImports": "explicit"
-},
-"java.compile.nullAnalysis.mode": "automatic"
+  },
+  "java.compile.nullAnalysis.mode": "automatic"
 }

@@ -8,6 +8,7 @@
     "vmware.vscode-spring-boot",
     "baimamprogrammer.vscode-maven-explorer",
     "ms-docker.remote-containers",
-    "streetsidesoftware.code-spell-checker"
+    "streetsidesoftware.code-spell-checker",
+    "alexkrechik.cucumberautocomplete"
   ]
 }

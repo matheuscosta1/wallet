@@ -385,6 +385,22 @@ To run all tests including functional (requires Docker):
 mvn verify
 ```
 
+### Running Specific Cucumber Tests
+
+To run tests for a specific feature file, such as `wallet_creation.feature`:
+
+```bash
+mvn clean test -Dtest=CucumberTest "-Dcucumber.features=src/test/resources/features/wallet/wallet_creation.feature"
+```
+
+### Generating Allure Reports
+
+To generate an Allure report using the Allure Docker service:
+
+```bash
+curl -X GET http://localhost:5050/allure-docker-service/generate-report
+```
+
 ---
 
 ## Future Improvements

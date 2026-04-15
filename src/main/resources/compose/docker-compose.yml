@@ -48,8 +48,9 @@ services:
     ports:
       - "5050:5050"
     volumes:
-      - ../../../target/allure-results:/app/allure-results
-      - ../../../target/allure-reports:/app/default-reports
+      - ../../../../target/allure-results:/app/allure-results
+
+      #- ./target/allure-report:/app/default-reports
     networks:
       - kafka-net
 
